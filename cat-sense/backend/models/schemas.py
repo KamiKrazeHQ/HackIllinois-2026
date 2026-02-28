@@ -10,7 +10,9 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    reply: str
+    reply: str                          # diagnosis_summary — for display and TTS
+    diagnosis: dict[str, Any] = {}      # full structured diagnosis from LLM
+    audio_url: str | None = None        # ElevenLabs TTS mp3, None if TTS not configured
     context_used: dict[str, Any] = {}
 
 
