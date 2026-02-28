@@ -6,11 +6,15 @@ Sends an image and returns structured machinery diagnostic JSON.
 import os
 import json
 import logging
+import concurrent.futures
 
 from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
+
+_TIMEOUT_S = 30
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
 _PROMPT = """
 You are an expert heavy machinery diagnostician analyzing an image.
@@ -45,29 +49,29 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+def _call_gemini_vision(image_bytes: bytes) -> dict:
+    client = _get_client()
+    image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[_PROMPT, image_part],
+    )
+    text = response.text.strip()
+    if text.startswith("```"):
+        text = text.split("```")[1]
+        if text.startswith("json"):
+            text = text[4:]
+    return json.loads(text)
+
+
 def analyze_image(image_bytes: bytes) -> dict:
     try:
-        client = _get_client()
+        future = _executor.submit(_call_gemini_vision, image_bytes)
+        return future.result(timeout=_TIMEOUT_S)
 
-        image_part = types.Part.from_bytes(
-            data=image_bytes,
-            mime_type="image/jpeg",
-        )
-
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[_PROMPT, image_part],
-        )
-
-        text = response.text.strip()
-
-        # Strip accidental markdown code fences
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-
-        return json.loads(text)
+    except concurrent.futures.TimeoutError:
+        logger.error("Gemini Vision timed out after %ds", _TIMEOUT_S)
+        return {**_FALLBACK, "issue": f"Gemini timed out after {_TIMEOUT_S}s"}
 
     except EnvironmentError as e:
         logger.warning("Gemini config error: %s — returning fallback", e)

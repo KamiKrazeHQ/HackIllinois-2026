@@ -38,9 +38,16 @@ def save_risk(session_id: str, data: dict) -> None:
     _session(session_id)["risk_output"] = data
 
 
+_MAX_CHAT_HISTORY = 20  # keep last 20 messages (~10 turns)
+
+
 def add_chat_message(session_id: str, role: str, content: str) -> None:
     """role: 'user' or 'assistant'"""
-    _session(session_id)["chat_history"].append({"role": role, "content": content})
+    history = _session(session_id)["chat_history"]
+    history.append({"role": role, "content": content})
+    # Trim to prevent unbounded memory growth
+    if len(history) > _MAX_CHAT_HISTORY:
+        _session(session_id)["chat_history"] = history[-_MAX_CHAT_HISTORY:]
 
 
 # ── Reader ────────────────────────────────────────────────────────────────────

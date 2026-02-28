@@ -10,10 +10,14 @@ import os
 import re
 import json
 import logging
+import concurrent.futures
 from typing import Any
 from services.rag_service import retrieve_as_block
 
 logger = logging.getLogger(__name__)
+
+_TIMEOUT_S = 30
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # ── Output schema ─────────────────────────────────────────────────────────────
 
@@ -212,18 +216,24 @@ def generate_response(user_message: str, context: dict[str, Any]) -> dict:
 
     prompt = f"Sensor Context:\n{context_block}\n\nTechnician Question: {user_message}"
 
-    try:
+    def _run() -> dict:
         if provider == "claude":
             raw = _call_claude(prompt, history)
             return _parse_or_retry(raw, lambda: _call_claude(prompt, history, strict=True))
-
         if provider == "openai":
             raw = _call_openai(prompt, history)
             return _parse_or_retry(raw, lambda: _call_openai(prompt, history, strict=True))
-
         # Default: gemini
         raw = _call_gemini(prompt)
         return _parse_or_retry(raw, lambda: _call_gemini(prompt, strict=True))
+
+    try:
+        future = _executor.submit(_run)
+        return future.result(timeout=_TIMEOUT_S)
+
+    except concurrent.futures.TimeoutError:
+        logger.error("LLM timed out after %ds (%s)", _TIMEOUT_S, provider)
+        return {**_FALLBACK, "diagnosis_summary": f"LLM timed out after {_TIMEOUT_S}s — try again"}
 
     except KeyError as e:
         logger.warning("Missing API key: %s", e)
