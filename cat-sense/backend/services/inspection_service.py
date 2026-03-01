@@ -72,7 +72,7 @@ def analyze_inspection(file_bytes: bytes, mime_type: str) -> list[dict]:
         img = PIL.Image.open(io.BytesIO(file_bytes))
         contents = [_PROMPT, img]
 
-    response = client.models.generate_content(model="gemini-2.5-flash", contents=contents)
+    response = client.models.generate_content(model="gemini-1.5-flash", contents=contents)
     raw = response.text.strip().replace("```json", "").replace("```", "").strip()
 
     try:

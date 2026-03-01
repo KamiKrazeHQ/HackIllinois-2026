@@ -144,13 +144,16 @@ def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
 
     img = PIL.Image.open(io.BytesIO(image_bytes))
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-1.5-flash",
         contents=[prompt_text, img],
     )
 
-    raw = response.text.strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(raw)
+    import re as _re
+    raw = response.text or ""
+    match = _re.search(r"\{.*\}", raw, _re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object in vision response: {raw[:200]}")
+    return json.loads(match.group())
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

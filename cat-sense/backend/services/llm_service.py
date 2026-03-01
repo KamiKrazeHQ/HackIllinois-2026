@@ -158,7 +158,7 @@ def _call_gemini(prompt: str, strict: bool = False) -> str:
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     instruction = _STRICT_JSON_INSTRUCTION if strict else _JSON_INSTRUCTION
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-1.5-flash",
         contents=f"{_SYSTEM_PROMPT}\n{instruction}\n\n{prompt}",
     )
     return response.text
