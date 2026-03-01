@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { fetchChat, ApiError } from '../api'
+import { fetchChat, ApiError, translateTexts } from '../api'
 import { useT } from '../i18n/TranslationContext'
 import MessageBubble from './MessageBubble'
 import ImageUpload from './ImageUpload'
@@ -22,6 +22,7 @@ interface RiskResult { failure_probability_14_days: number; estimated_downtime_c
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  displayContent?: string
   diagnosis?: Diagnosis
   timestamp: string
 }
@@ -68,7 +69,7 @@ function TypingIndicator() {
 }
 
 export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, onRisk }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
 
   const SUGGESTIONS = [
     t('chatSuggestion0'),
@@ -98,10 +99,35 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const messagesRef = useRef<Message[]>(messages)
+
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, activeWidget])
+
+  useEffect(() => {
+    const current = messagesRef.current
+    if (lang === 'en') {
+      if (current.some(m => m.displayContent)) {
+        setMessages(prev => prev.map(m => ({ ...m, displayContent: undefined })))
+      }
+      return
+    }
+    const texts = current.filter(m => m.role === 'assistant').map(m => m.content)
+    if (texts.length === 0) return
+    translateTexts(texts, lang)
+      .then((data: { translations: string[] }) => {
+        let idx = 0
+        setMessages(prev => prev.map(m =>
+          m.role === 'assistant'
+            ? { ...m, displayContent: data.translations[idx++] }
+            : m
+        ))
+      })
+      .catch(console.error)
+  }, [lang])
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
@@ -121,6 +147,20 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
         ...prev,
         { role: 'assistant', content: reply, diagnosis, timestamp: now() },
       ])
+      if (lang !== 'en') {
+        translateTexts([reply], lang)
+          .then((res: { translations: string[] }) => {
+            setMessages(prev => {
+              const updated = [...prev]
+              const last = updated.length - 1
+              if (updated[last]?.content === reply && updated[last].role === 'assistant') {
+                updated[last] = { ...updated[last], displayContent: res.translations[0] }
+              }
+              return updated
+            })
+          })
+          .catch(console.error)
+      }
       if (data.diagnosis?.severity) onDiagnosis(data.diagnosis)
       if (data.audio_url && audioRef.current) {
         audioRef.current.src = `http://localhost:8000${data.audio_url}`
@@ -174,7 +214,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
           <MessageBubble
             key={i}
             role={m.role}
-            content={m.content}
+            content={m.displayContent ?? m.content}
             diagnosis={m.diagnosis}
             timestamp={m.timestamp}
             isLast={i === messages.length - 1}
