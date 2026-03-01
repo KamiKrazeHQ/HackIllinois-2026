@@ -190,11 +190,52 @@ def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
     raise last_exc
 
 
+# ── Claude vision fallback ────────────────────────────────────────────────────
+
+def _run_claude(image_bytes: bytes, rekognition_result: dict | None, mime_type: str = "image/jpeg") -> dict:
+    import base64
+    import re as _re
+    import anthropic
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not set")
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    if rekognition_result:
+        prompt_text = _PROMPT_WITH_REKOG.format(
+            damage_labels=json.dumps(rekognition_result["damage_labels"], indent=2),
+            all_labels=json.dumps(rekognition_result["all_labels"], indent=2),
+        )
+    else:
+        prompt_text = _PROMPT_DIRECT
+
+    image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2000,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": mime_type, "data": image_data}},
+                {"type": "text", "text": prompt_text},
+            ],
+        }],
+    )
+    raw = response.content[0].text or ""
+    match = _re.search(r"\{.*\}", raw, _re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object in Claude vision response: {raw[:200]}")
+    return json.loads(match.group())
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     """
     Run Rekognition (if AWS credentials present) then Gemini deep analysis.
+    Falls back to Claude if all Gemini models are exhausted.
     Returns a dict with both legacy VisionResponse fields and rich new fields.
     """
     rekognition_result = None
@@ -214,11 +255,19 @@ def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         except Exception as exc:
             logger.warning("Rekognition failed (%s) — using Gemini-only analysis", exc)
 
-    # Gemini analysis
+    # Try Gemini first, then Claude
+    analysis = None
     try:
         analysis = _run_gemini(image_bytes, rekognition_result, mime_type)
     except Exception as exc:
-        logger.error("Gemini vision failed: %s", exc)
+        logger.warning("All Gemini vision models failed (%s) — trying Claude", exc)
+        try:
+            analysis = _run_claude(image_bytes, rekognition_result, mime_type)
+            logger.info("Vision analysis completed via Claude fallback")
+        except Exception as claude_exc:
+            logger.error("Claude vision also failed: %s", claude_exc)
+
+    if analysis is None:
         return {**_FALLBACK}
 
     condition = analysis.get("overall_condition", "Fair")
