@@ -1,0 +1,174 @@
+{
+  "keywords": {
+    "hydraulic": {
+      "keywords": ["hydraulic", "hydraulics", "hydraulic pump", "hydraulic fluid", "hydraulic leak", "hydraulic pressure", "hydraulic cylinder", "hydraulic hose"],
+      "parts": [
+        {
+          "name": "Hydraulic Pump Assembly",
+          "part_number": "10R-8899",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Hydraulic+Pump+Assembly"
+        },
+        {
+          "name": "Hydraulic Filter Element",
+          "part_number": "1R-0750",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Hydraulic+Filter+Element"
+        },
+        {
+          "name": "Hydraulic Hose Assembly",
+          "part_number": "5I-5944",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Hydraulic+Hose+Assembly"
+        }
+      ]
+    },
+    "engine_oil": {
+      "keywords": ["engine oil", "oil pressure", "oil leak", "low oil", "oil filter", "oil consumption", "engine lubrication"],
+      "parts": [
+        {
+          "name": "Engine Oil Filter",
+          "part_number": "1R-0716",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Engine+Oil+Filter"
+        },
+        {
+          "name": "Engine Oil Pressure Sensor",
+          "part_number": "194-6725",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Engine+Oil+Pressure+Sensor"
+        },
+        {
+          "name": "Engine Gasket Kit",
+          "part_number": "4P-7839",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Engine+Gasket+Kit"
+        }
+      ]
+    },
+    "track": {
+      "keywords": ["track", "track tension", "track wear", "track pad", "track link", "undercarriage", "track shoe", "track roller"],
+      "parts": [
+        {
+          "name": "Track Link Assembly",
+          "part_number": "9W-5708",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Track+Link+Assembly"
+        },
+        {
+          "name": "Track Shoe Assembly",
+          "part_number": "7T-3402",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Track+Shoe+Assembly"
+        },
+        {
+          "name": "Track Roller",
+          "part_number": "4T-2940",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Track+Roller"
+        }
+      ]
+    },
+    "bucket": {
+      "keywords": ["bucket", "bucket teeth", "bucket pin", "bucket wear", "cutting edge", "bucket lip", "ground engaging"],
+      "parts": [
+        {
+          "name": "Bucket Tooth Assembly",
+          "part_number": "6Y-3222",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Bucket+Tooth+Assembly"
+        },
+        {
+          "name": "Bucket Pin",
+          "part_number": "8E-6484",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Bucket+Pin"
+        },
+        {
+          "name": "Cutting Edge",
+          "part_number": "4T-9819",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Cutting+Edge"
+        }
+      ]
+    },
+    "cooling": {
+      "keywords": ["coolant", "cooling", "overheating", "radiator", "water pump", "thermostat", "temperature", "heat"],
+      "parts": [
+        {
+          "name": "Radiator Assembly",
+          "part_number": "208-9951",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Radiator+Assembly"
+        },
+        {
+          "name": "Water Pump",
+          "part_number": "3W-8183",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Water+Pump"
+        },
+        {
+          "name": "Thermostat",
+          "part_number": "4N-0371",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Thermostat"
+        }
+      ]
+    },
+    "fuel": {
+      "keywords": ["fuel", "fuel filter", "fuel pump", "fuel injection", "fuel leak", "fuel pressure", "injector"],
+      "parts": [
+        {
+          "name": "Fuel Filter",
+          "part_number": "1R-0755",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Fuel+Filter"
+        },
+        {
+          "name": "Fuel Injector",
+          "part_number": "10R-7675",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Fuel+Injector"
+        },
+        {
+          "name": "Fuel Transfer Pump",
+          "part_number": "4W-8012",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Fuel+Transfer+Pump"
+        }
+      ]
+    },
+    "electrical": {
+      "keywords": ["electrical", "battery", "alternator", "wiring", "sensor", "fuse", "short circuit", "voltage"],
+      "parts": [
+        {
+          "name": "Battery",
+          "part_number": "9X-6804",
+          "link": "https://parts.cat.com/en/catcorp/search?q=CAT+Battery"
+        },
+        {
+          "name": "Alternator",
+          "part_number": "101-8558",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Alternator"
+        },
+        {
+          "name": "Wiring Harness",
+          "part_number": "331-0870",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Wiring+Harness"
+        }
+      ]
+    },
+    "air": {
+      "keywords": ["air filter", "air intake", "air cleaner", "clogged air", "air restriction", "turbocharger", "turbo"],
+      "parts": [
+        {
+          "name": "Air Filter Element",
+          "part_number": "6I-2499",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Air+Filter+Element"
+        },
+        {
+          "name": "Turbocharger Assembly",
+          "part_number": "10R-7660",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Turbocharger+Assembly"
+        }
+      ]
+    },
+    "brake": {
+      "keywords": ["brake", "brakes", "brake fluid", "brake wear", "stopping", "brake pad", "brake disc"],
+      "parts": [
+        {
+          "name": "Brake Disc",
+          "part_number": "8E-7645",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Brake+Disc"
+        },
+        {
+          "name": "Brake Assembly Kit",
+          "part_number": "1090965",
+          "link": "https://parts.cat.com/en/catcorp/search?q=Brake+Assembly+Kit"
+        }
+      ]
+    }
+  }
+}
