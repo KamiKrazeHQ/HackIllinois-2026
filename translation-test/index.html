@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CAT Inspect - Translation Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --cat-yellow: #FFCD11;
+      --cat-black: #1A1A1A;
+      --cat-dark: #0D0D0D;
+      --cat-gray: #2A2A2A;
+      --cat-light: #F5F5F5;
+      --pass: #22C55E;
+      --monitor: #F59E0B;
+      --fail: #EF4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--cat-dark);
+      color: var(--cat-light);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--cat-yellow);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid var(--cat-black);
+    }
+
+    .logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 1.8rem;
+      color: var(--cat-black);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .logo span {
+      background: var(--cat-black);
+      color: var(--cat-yellow);
+      padding: 2px 8px;
+      margin-right: 6px;
+    }
+
+    /* LANGUAGE SWITCHER */
+    .lang-switcher {
+      display: flex;
+      gap: 8px;
+    }
+
+    .lang-btn {
+      background: var(--cat-black);
+      color: var(--cat-yellow);
+      border: 2px solid var(--cat-black);
+      padding: 8px 18px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+
+    .lang-btn.active {
+      background: var(--cat-black);
+      color: var(--cat-yellow);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+    }
+
+    .lang-btn:not(.active) {
+      background: transparent;
+      color: var(--cat-black);
+      border-color: var(--cat-black);
+    }
+
+    .lang-btn:hover:not(.active) {
+      background: rgba(0,0,0,0.1);
+    }
+
+    /* LOADING BAR */
+    .loading-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--cat-yellow) 0%, transparent 100%);
+      width: 0%;
+      transition: width 0.4s ease;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 999;
+    }
+
+    .loading-bar.active { width: 70%; }
+    .loading-bar.done { width: 100%; opacity: 0; transition: width 0.2s, opacity 0.3s 0.2s; }
+
+    /* MAIN */
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    /* INSPECTION HEADER */
+    .inspection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--cat-gray);
+    }
+
+    .inspection-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    .inspection-title .subtitle {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #888;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .inspection-meta {
+      text-align: right;
+      font-size: 0.85rem;
+      color: #888;
+      line-height: 1.8;
+    }
+
+    .inspection-meta strong {
+      color: var(--cat-yellow);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+    }
+
+    /* STATUS BADGES */
+    .status-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .status-card {
+      flex: 1;
+      padding: 20px;
+      border-radius: 2px;
+      border-left: 4px solid;
+      background: var(--cat-gray);
+    }
+
+    .status-card.pass { border-color: var(--pass); }
+    .status-card.monitor { border-color: var(--monitor); }
+    .status-card.fail { border-color: var(--fail); }
+
+    .status-card .status-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .status-card .status-value {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .status-card.pass .status-value { color: var(--pass); }
+    .status-card.monitor .status-value { color: var(--monitor); }
+    .status-card.fail .status-value { color: var(--fail); }
+
+    /* INSPECTION ITEMS */
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--cat-yellow);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--cat-gray);
+    }
+
+    .inspection-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .inspection-item {
+      background: var(--cat-gray);
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    .inspection-item:hover { background: #333; }
+
+    .item-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .item-badge {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 2px;
+    }
+
+    .badge-pass { background: rgba(34,197,94,0.15); color: var(--pass); border: 1px solid var(--pass); }
+    .badge-monitor { background: rgba(245,158,11,0.15); color: var(--monitor); border: 1px solid var(--monitor); }
+    .badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); border: 1px solid var(--fail); }
+
+    /* NOTES */
+    .notes-box {
+      background: var(--cat-gray);
+      padding: 20px;
+      border-radius: 2px;
+      margin-bottom: 32px;
+    }
+
+    .notes-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .notes-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    /* ACTION BUTTONS */
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--cat-yellow);
+      color: var(--cat-black);
+    }
+
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--cat-light);
+      border: 2px solid var(--cat-gray);
+    }
+
+    .btn-secondary:hover { border-color: #555; background: var(--cat-gray); }
+
+    /* TRANSLATING STATE */
+    .translating {
+      opacity: 0.5;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<header>
+  <div class="logo"><span>CAT</span> Inspect</div>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
+    <button class="lang-btn" onclick="setLang('es', this)">ES</button>
+    <button class="lang-btn" onclick="setLang('fr', this)">FR</button>
+  </div>
+</header>
+
+<main id="mainContent">
+  <div class="inspection-header">
+    <div>
+      <div class="inspection-title" data-key="inspectionTitle">Daily Walkaround Inspection</div>
+      <div class="inspection-title subtitle" data-key="inspectionSubtitle">CAT 950 Wheel Loader - Unit #4821</div>
+    </div>
+    <div class="inspection-meta">
+      <div><strong data-key="dateLabel">Date</strong>: Feb 28, 2025</div>
+      <div><strong data-key="inspectorLabel">Inspector</strong>: J. Martinez</div>
+      <div><strong data-key="siteLabel">Site</strong>: Zone A - North Pit</div>
+    </div>
+  </div>
+
+  <div class="status-row">
+    <div class="status-card pass">
+      <div class="status-label" data-key="passLabel">Pass</div>
+      <div class="status-value">14</div>
+    </div>
+    <div class="status-card monitor">
+      <div class="status-label" data-key="monitorLabel">Monitor</div>
+      <div class="status-value">3</div>
+    </div>
+    <div class="status-card fail">
+      <div class="status-label" data-key="failLabel">Fail</div>
+      <div class="status-value">1</div>
+    </div>
+  </div>
+
+  <div class="section-title" data-key="engineSection">Engine & Fluids</div>
+  <div class="inspection-grid">
+    <div class="inspection-item">
+      <span class="item-name" data-key="engineOil">Engine Oil Level</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="coolantLevel">Coolant Level</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="hydraulicFluid">Hydraulic Fluid</span>
+      <span class="item-badge badge-monitor" data-key="monitorStatus">Monitor</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="fuelLevel">Fuel Level</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+  </div>
+
+  <div class="section-title" data-key="tiresSection">Tires & Undercarriage</div>
+  <div class="inspection-grid">
+    <div class="inspection-item">
+      <span class="item-name" data-key="frontLeftTire">Front Left Tire</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="frontRightTire">Front Right Tire</span>
+      <span class="item-badge badge-fail" data-key="failStatus">Fail</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="rearLeftTire">Rear Left Tire</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="rearRightTire">Rear Right Tire</span>
+      <span class="item-badge badge-monitor" data-key="monitorStatus">Monitor</span>
+    </div>
+  </div>
+
+  <div class="section-title" data-key="safetySection">Safety & Lights</div>
+  <div class="inspection-grid">
+    <div class="inspection-item">
+      <span class="item-name" data-key="headlights">Headlights</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="backupAlarm">Backup Alarm</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="seatbelt">Seatbelt</span>
+      <span class="item-badge badge-pass" data-key="passStatus">Pass</span>
+    </div>
+    <div class="inspection-item">
+      <span class="item-name" data-key="fireExtinguisher">Fire Extinguisher</span>
+      <span class="item-badge badge-monitor" data-key="monitorStatus">Monitor</span>
+    </div>
+  </div>
+
+  <div class="notes-box">
+    <div class="notes-label" data-key="notesLabel">Inspector Notes</div>
+    <div class="notes-text" data-key="notesText">
+      Front right tire shows signs of uneven wear on the outer edge. Recommend immediate inspection by maintenance team before next operational shift. All fluid levels within acceptable range. Hydraulic fluid slightly below optimal - schedule top-up within 48 hours.
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" data-key="submitBtn">Submit Report</button>
+    <button class="btn btn-secondary" data-key="saveBtn">Save Draft</button>
+  </div>
+</main>
+
+<script>
+  const SOURCE_TEXTS = {
+    inspectionTitle: "Daily Walkaround Inspection",
+    inspectionSubtitle: "CAT 950 Wheel Loader - Unit #4821",
+    dateLabel: "Date",
+    inspectorLabel: "Inspector",
+    siteLabel: "Site",
+    passLabel: "Pass",
+    monitorLabel: "Monitor",
+    failLabel: "Fail",
+    passStatus: "Pass",
+    monitorStatus: "Monitor",
+    failStatus: "Fail",
+    engineSection: "Engine & Fluids",
+    engineOil: "Engine Oil Level",
+    coolantLevel: "Coolant Level",
+    hydraulicFluid: "Hydraulic Fluid",
+    fuelLevel: "Fuel Level",
+    tiresSection: "Tires & Undercarriage",
+    frontLeftTire: "Front Left Tire",
+    frontRightTire: "Front Right Tire",
+    rearLeftTire: "Rear Left Tire",
+    rearRightTire: "Rear Right Tire",
+    safetySection: "Safety & Lights",
+    headlights: "Headlights",
+    backupAlarm: "Backup Alarm",
+    seatbelt: "Seatbelt",
+    fireExtinguisher: "Fire Extinguisher",
+    notesLabel: "Inspector Notes",
+    notesText: "Front right tire shows signs of uneven wear on the outer edge. Recommend immediate inspection by maintenance team before next operational shift. All fluid levels within acceptable range. Hydraulic fluid slightly below optimal - schedule top-up within 48 hours.",
+    submitBtn: "Submit Report",
+    saveBtn: "Save Draft"
+  };
+
+  const translationCache = { en: SOURCE_TEXTS };
+  let currentLang = 'en';
+  const loadingBar = document.getElementById('loadingBar');
+
+  function startLoading() {
+    loadingBar.style.transition = 'width 0.4s ease';
+    loadingBar.classList.remove('done');
+    loadingBar.classList.add('active');
+  }
+
+  function doneLoading() {
+    loadingBar.style.width = '100%';
+    setTimeout(() => loadingBar.classList.add('done'), 100);
+  }
+
+  async function setLang(lang, btn) {
+    if (lang === currentLang) return;
+
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLang = lang;
+
+    if (lang === 'en') {
+      applyTranslations(SOURCE_TEXTS);
+      return;
+    }
+
+    if (translationCache[lang]) {
+      applyTranslations(translationCache[lang]);
+      return;
+    }
+
+    const mainContent = document.getElementById('mainContent');
+    mainContent.classList.add('translating');
+    startLoading();
+
+    const keys = Object.keys(SOURCE_TEXTS);
+    const texts = Object.values(SOURCE_TEXTS);
+
+    try {
+      const response = await fetch('http://localhost:5000/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts, target: lang })
+      });
+
+      const data = await response.json();
+
+      if (data.translations) {
+        const translated = {};
+        keys.forEach((key, i) => {
+          translated[key] = data.translations[i];
+        });
+        translationCache[lang] = translated;
+        applyTranslations(translated);
+      }
+    } catch (err) {
+      console.error('Translation failed:', err);
+      alert('Could not connect to translation server. Make sure Flask is running on port 5000.');
+    } finally {
+      mainContent.classList.remove('translating');
+      doneLoading();
+    }
+  }
+
+  function applyTranslations(translations) {
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const key = el.getAttribute('data-key');
+      if (translations[key]) {
+        el.textContent = translations[key];
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
