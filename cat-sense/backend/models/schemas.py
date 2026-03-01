@@ -18,10 +18,32 @@ class ChatResponse(BaseModel):
 
 # ── Vision ────────────────────────────────────────────────────────────────────
 
+class ErrorFound(BaseModel):
+    error_id: str = ""
+    category: str = ""
+    severity: str = "Low"        # Low | Medium | High | Critical
+    description: str = ""
+    location: str = ""
+    recommended_action: str = ""
+    urgency: str = "Monitor"     # Monitor | Schedule Repair | Immediate Action Required
+
+
 class VisionResponse(BaseModel):
+    # Legacy fields (kept for backward compatibility)
     description: str
     detected_issues: list[str]
-    severity: str  # "Minor" | "Moderate" | "Severe"
+    severity: str                # "Minor" | "Moderate" | "Severe"
+    # Rich fields
+    overall_condition: str = "Fair"          # Good | Fair | Poor | Critical
+    overall_score: int = 5                   # 1-10
+    errors_found: list[ErrorFound] = []
+    positive_observations: list[str] = []
+    inspection_summary: str = ""
+    estimated_repair_priority: str = "Routine"   # Routine | Urgent | Emergency
+    follow_up_recommended: bool = False
+    follow_up_notes: str = ""
+    rekognition_labels: list[dict] = []
+    damage_indicators: list[dict] = []
 
 
 # ── Audio ─────────────────────────────────────────────────────────────────────

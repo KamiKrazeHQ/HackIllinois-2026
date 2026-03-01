@@ -16,12 +16,62 @@ def is_demo() -> bool:
 # ── Predefined responses ───────────────────────────────────────────────────────
 
 DEMO_VISION = {
-    "component": "hydraulic pump",
-    "issue": "Visible crack on the pump housing near the inlet port",
+    "description": "Hydraulic pump shows a high-severity crack at the inlet port with active fluid seepage. Immediate replacement required.",
+    "detected_issues": [
+        "Crack on pump housing near inlet port",
+        "Fluid seepage around seal area",
+        "Surface corrosion on mounting bracket",
+    ],
     "severity": "Moderate",
-    "classification": "Crack",
-    "confidence": 0.91,
-    "recommended_action": "Replace hydraulic pump housing within 48 hours",
+    "overall_condition": "Poor",
+    "overall_score": 4,
+    "errors_found": [
+        {
+            "error_id": "ERR-001",
+            "category": "Structural",
+            "severity": "High",
+            "description": "Visible crack on the pump housing near the inlet port",
+            "location": "Hydraulic pump inlet port",
+            "recommended_action": "Replace hydraulic pump housing within 48 hours",
+            "urgency": "Immediate Action Required",
+        },
+        {
+            "error_id": "ERR-002",
+            "category": "Fluid",
+            "severity": "Medium",
+            "description": "Fluid seepage detected around the shaft seal area",
+            "location": "Pump shaft seal",
+            "recommended_action": "Replace shaft seal and inspect hydraulic fluid level",
+            "urgency": "Schedule Repair",
+        },
+        {
+            "error_id": "ERR-003",
+            "category": "Wear",
+            "severity": "Low",
+            "description": "Surface corrosion forming on mounting bracket",
+            "location": "Pump mounting bracket",
+            "recommended_action": "Clean, treat with rust inhibitor, repaint",
+            "urgency": "Monitor",
+        },
+    ],
+    "positive_observations": [
+        "Hydraulic lines appear intact with no visible kinks",
+        "Pressure relief valve appears properly seated",
+    ],
+    "inspection_summary": "Hydraulic pump shows a high-severity crack at the inlet port with active fluid seepage. Immediate replacement of pump housing required before returning to service.",
+    "estimated_repair_priority": "Urgent",
+    "follow_up_recommended": True,
+    "follow_up_notes": "After pump housing replacement, perform full hydraulic pressure test and inspect all downstream components for contamination.",
+    "rekognition_labels": [
+        {"name": "Machine", "confidence": 99.1},
+        {"name": "Hydraulic", "confidence": 87.3},
+        {"name": "Crack", "confidence": 76.5},
+        {"name": "Oil Stain", "confidence": 68.2},
+    ],
+    "damage_indicators": [
+        {"name": "Crack", "confidence": 76.5},
+        {"name": "Oil Stain", "confidence": 68.2},
+    ],
 }
 
 DEMO_AUDIO = {
