@@ -117,6 +117,18 @@ export async function removeMachine(id: string) {
   return handleResponse(res)
 }
 
+// ── Inspection Report Analyzer ────────────────────────────────────────────────
+
+export async function uploadInspectionReport(file: File) {
+  const form = new FormData()
+  form.append("file", file)
+  const res = await fetch(`${BASE_URL}/inspection/upload`, {
+    method: "POST",
+    body: form,
+  })
+  return handleResponse(res)
+}
+
 // ── Dealers ───────────────────────────────────────────────────────────────────
 
 export async function fetchDealers(lat = 41.87, lon = -87.62, radiusKm = 50) {
