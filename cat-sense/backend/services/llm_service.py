@@ -153,15 +153,25 @@ def _build_context_block(context: dict[str, Any]) -> str:
 
 # ── Provider calls ────────────────────────────────────────────────────────────
 
+_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+
+
 def _call_gemini(prompt: str, strict: bool = False) -> str:
     from google import genai
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     instruction = _STRICT_JSON_INSTRUCTION if strict else _JSON_INSTRUCTION
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"{_SYSTEM_PROMPT}\n{instruction}\n\n{prompt}",
-    )
-    return response.text
+    contents = f"{_SYSTEM_PROMPT}\n{instruction}\n\n{prompt}"
+    last_exc: Exception | None = None
+    for model in _GEMINI_MODELS:
+        try:
+            response = client.models.generate_content(model=model, contents=contents)
+            if model != _GEMINI_MODELS[0]:
+                logger.info("Fell back to model: %s", model)
+            return response.text
+        except Exception as exc:
+            logger.warning("Gemini model %s failed (%s: %s), trying next", model, type(exc).__name__, exc)
+            last_exc = exc
+    raise last_exc
 
 
 def _call_claude(prompt: str, history: list[dict], strict: bool = False) -> str:
