@@ -129,6 +129,17 @@ export async function uploadInspectionReport(file: File) {
   return handleResponse(res)
 }
 
+// ── Translation ───────────────────────────────────────────────────────────────
+
+export async function translateTexts(texts: string[], target: string) {
+  const res = await fetch(`${BASE_URL}/translate/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texts, target }),
+  })
+  return handleResponse(res)
+}
+
 // ── Dealers ───────────────────────────────────────────────────────────────────
 
 export async function fetchDealers(lat = 41.87, lon = -87.62, radiusKm = 50) {

@@ -10,6 +10,7 @@ import SensorInput from './components/SensorInput'
 import ReportCard from './components/ReportCard'
 import GarageView from './components/GarageView'
 import InspectionAnalyzer from './components/InspectionAnalyzer'
+import TranslationDemo from './components/TranslationDemo'
 
 interface Diagnosis {
   diagnosis_summary: string
@@ -23,7 +24,7 @@ interface VisionResult { description: string; detected_issues: string[]; severit
 interface AudioResult { dominant_frequency_hz: number; anomaly_detected: boolean; anomaly_type: string; severity: string }
 interface RiskResult { failure_probability_14_days: number; estimated_downtime_cost_usd: number; recommended_action_window: string; risk_level: string }
 
-const TABS = ['Chat', 'Vision', 'Audio', 'Sensors', 'Report', 'Garage', 'Inspect'] as const
+const TABS = ['Chat', 'Vision', 'Audio', 'Sensors', 'Report', 'Garage', 'Inspect', 'Translate'] as const
 type Tab = typeof TABS[number]
 
 const TAB_ICONS: Record<Tab, string> = {
@@ -34,6 +35,7 @@ const TAB_ICONS: Record<Tab, string> = {
   Report: '📋',
   Garage: '🏗',
   Inspect: '🔩',
+  Translate: '🌐',
 }
 
 export default function Home() {
@@ -159,6 +161,7 @@ export default function Home() {
             )}
             {tab === 'Garage' && <GarageView />}
             {tab === 'Inspect' && <InspectionAnalyzer />}
+            {tab === 'Translate' && <TranslationDemo />}
           </div>
         )}
       </main>
