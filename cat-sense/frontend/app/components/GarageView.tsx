@@ -31,10 +31,20 @@ interface Machine {
   added_at: string
 }
 
-const CONDITION_STYLE: Record<string, { badge: string; dot: string }> = {
-  Good: { badge: 'bg-green-900/60 text-green-300 border-green-700', dot: 'bg-green-500' },
-  Fair: { badge: 'bg-yellow-900/60 text-yellow-300 border-yellow-700', dot: 'bg-yellow-400' },
-  Poor: { badge: 'bg-red-900/60 text-red-300 border-red-700', dot: 'bg-red-500' },
+const CONDITION_BORDER: Record<string, string> = {
+  Good: 'border-green-500',
+  Fair: 'border-cat',
+  Poor: 'border-red-500',
+}
+const CONDITION_BADGE: Record<string, string> = {
+  Good: 'bg-green-950 text-green-400 border-green-900',
+  Fair: 'bg-yellow-950 text-yellow-400 border-yellow-900',
+  Poor: 'bg-red-950 text-red-400 border-red-900',
+}
+const CONDITION_DOT: Record<string, string> = {
+  Good: 'bg-green-500',
+  Fair: 'bg-yellow-400',
+  Poor: 'bg-red-500',
 }
 
 function fmt(iso: string) {
@@ -42,17 +52,9 @@ function fmt(iso: string) {
   catch { return iso }
 }
 
-function uid() {
-  return getAuth(app).currentUser?.uid ?? 'anonymous'
-}
-
-function machineDoc(machineId: string) {
-  return doc(db, 'users', uid(), 'machines', machineId)
-}
-
-function machinesCol() {
-  return collection(db, 'users', uid(), 'machines')
-}
+function uid() { return getAuth(app).currentUser?.uid ?? 'anonymous' }
+function machineDoc(machineId: string) { return doc(db, 'users', uid(), 'machines', machineId) }
+function machinesCol() { return collection(db, 'users', uid(), 'machines') }
 
 // ── Machine Detail ─────────────────────────────────────────────────────────────
 
@@ -74,13 +76,10 @@ function MachineDetail({ machine, onBack, onUpdated }: {
     try {
       const record: InspectionRecord = await scanInspectionAPI(machine.id, file, machine.description, machine.pin)
       record.filename = file.name
-
       const updated = { ...machine, inspections: [...machine.inspections, record] }
       onUpdated(updated)
-
-      updateDoc(machineDoc(machine.id), {
-        inspections: arrayUnion(record),
-      }).catch(err => console.warn('[Scan] Firestore sync failed:', err))
+      updateDoc(machineDoc(machine.id), { inspections: arrayUnion(record) })
+        .catch(err => console.warn('[Scan] Firestore sync failed:', err))
     } catch (err: unknown) {
       setScanError(err instanceof Error ? err.message : 'Scan failed.')
     } finally {
@@ -90,89 +89,103 @@ function MachineDetail({ machine, onBack, onUpdated }: {
   }
 
   const latestCondition = machine.inspections.at(-1)?.overall_condition
-  const condStyle = latestCondition ? CONDITION_STYLE[latestCondition] : null
+  const condBorder = latestCondition ? CONDITION_BORDER[latestCondition] : 'border-[#2A2A2A]'
+  const condBadge = latestCondition ? CONDITION_BADGE[latestCondition] : ''
+  const condDot = latestCondition ? CONDITION_DOT[latestCondition] : ''
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#FFC200] transition-colors">
-        {t('backToGarage')}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-xs font-condensed font-bold text-[#444] hover:text-cat uppercase tracking-widest transition-colors"
+      >
+        ← {t('backToGarage')}
       </button>
 
       {/* Machine info card */}
-      <div className="bg-gray-900 border border-gray-700/50 rounded-2xl p-4 space-y-3">
+      <div className={`bg-cat-black border-l-4 ${condBorder} p-5 space-y-4`}>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="font-bold text-white text-base leading-tight">{machine.nickname}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{machine.description}</p>
+            <h2 className="font-condensed font-black text-white text-xl uppercase leading-tight">{machine.nickname}</h2>
+            <p className="text-xs text-[#444] mt-0.5">{machine.description}</p>
           </div>
-          <span className="text-2xl">🏗</span>
+          <div className="w-10 h-10 bg-[#111] border border-[#2A2A2A] flex items-center justify-center text-xl flex-shrink-0">🏗</div>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-          <div><span className="text-gray-500">{t('pinLabel')}</span><p className="text-gray-200 font-mono">{machine.pin}</p></div>
-          <div><span className="text-gray-500">{t('modelLabel')}</span><p className="text-gray-200">{machine.model_code}</p></div>
-          <div><span className="text-gray-500">{t('familyLabel')}</span><p className="text-gray-200">{machine.model_family}</p></div>
-          <div><span className="text-gray-500">{t('serialLabel')}</span><p className="text-gray-200 font-mono">{machine.serial_number || '—'}</p></div>
-          {machine.year && <div><span className="text-gray-500">{t('yearLabel')}</span><p className="text-gray-200">{machine.year}</p></div>}
-          <div><span className="text-gray-500">{t('addedLabel')}</span><p className="text-gray-200">{fmt(machine.added_at)}</p></div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          {[
+            [t('pinLabel'), machine.pin, true],
+            [t('modelLabel'), machine.model_code, false],
+            [t('familyLabel'), machine.model_family, false],
+            [t('serialLabel'), machine.serial_number || '—', true],
+            ...(machine.year ? [[t('yearLabel'), machine.year, false]] : []),
+            [t('addedLabel'), fmt(machine.added_at), false],
+          ].map(([label, value, mono], i) => (
+            <div key={i}>
+              <p className="text-[9px] text-cat font-condensed font-bold uppercase tracking-widest mb-0.5">{label}</p>
+              <p className={`text-sm text-[#CCC] ${mono ? 'font-mono' : 'font-condensed font-semibold'}`}>{value as string}</p>
+            </div>
+          ))}
         </div>
-        {condStyle && (
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-[10px] text-gray-500">{t('latestCondition')}</span>
-            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold ${condStyle.badge}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${condStyle.dot}`} />{latestCondition}
+        {latestCondition && (
+          <div className="flex items-center gap-2 pt-2 border-t border-[#1A1A1A]">
+            <span className="text-[9px] text-[#444] font-condensed font-bold uppercase tracking-widest">{t('latestCondition')}</span>
+            <span className={`flex items-center gap-1.5 px-2.5 py-1 border text-[11px] font-condensed font-bold uppercase ${condBadge}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${condDot}`} />{latestCondition}
             </span>
           </div>
         )}
       </div>
 
       {/* Upload inspection */}
-      <div className="bg-gray-900 border border-[#FFC200]/20 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-[#FFC200] mb-2">{t('uploadInspectionDoc')}</p>
-        <p className="text-[11px] text-gray-500 mb-3">{t('uploadHint')}</p>
+      <div className="bg-cat-black border-l-4 border-cat p-4">
+        <p className="text-xs font-condensed font-black text-cat uppercase tracking-widest mb-1">{t('uploadInspectionDoc')}</p>
+        <p className="text-[11px] text-[#444] mb-3">{t('uploadHint')}</p>
         <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleScan} />
         <button
           onClick={() => fileRef.current?.click()}
           disabled={scanning}
-          className="w-full py-2 rounded-xl border border-dashed border-[#FFC200]/40 text-xs text-[#FFC200] hover:bg-[#FFC200]/5 disabled:opacity-40 transition-colors"
+          className="w-full py-3 border-2 border-dashed border-cat/30 text-xs font-condensed font-black text-cat/60 uppercase tracking-widest hover:bg-cat/5 hover:border-cat/50 hover:text-cat disabled:opacity-30 transition-all"
         >
           {scanning ? t('scanning') : t('chooseFile')}
         </button>
-        {scanError && <p className="mt-2 text-xs text-red-400">{scanError}</p>}
+        {scanError && <p className="mt-2 text-xs text-red-400 font-condensed uppercase">{scanError}</p>}
       </div>
 
       {/* Inspection history */}
       {machine.inspections.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium px-1">
+          <p className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest px-1">
             Inspection History ({machine.inspections.length})
           </p>
           {[...machine.inspections].reverse().map(rec => {
-            const cs = CONDITION_STYLE[rec.overall_condition] ?? CONDITION_STYLE.Fair
+            const border = CONDITION_BORDER[rec.overall_condition] ?? CONDITION_BORDER.Fair
+            const badge = CONDITION_BADGE[rec.overall_condition] ?? CONDITION_BADGE.Fair
+            const dot = CONDITION_DOT[rec.overall_condition] ?? CONDITION_DOT.Fair
             return (
-              <div key={rec.id} className="bg-gray-900 border border-gray-700/40 rounded-xl p-3 space-y-2">
+              <div key={rec.id} className={`bg-cat-black border-l-4 ${border} p-3.5 space-y-2`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-300 font-medium truncate">{rec.filename}</span>
-                  <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold ${cs.badge}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${cs.dot}`} />{rec.overall_condition}
+                  <span className="text-xs text-[#CCC] font-condensed font-bold uppercase truncate">{rec.filename}</span>
+                  <span className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-0.5 border text-[10px] font-condensed font-bold uppercase ${badge}`}>
+                    <span className={`w-1 h-1 rounded-full ${dot}`} />{rec.overall_condition}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 leading-snug">{rec.summary}</p>
+                <p className="text-xs text-[#666] leading-snug">{rec.summary}</p>
                 {rec.issues_found.length > 0 && (
                   <ul className="space-y-0.5">
                     {rec.issues_found.map((issue, i) => (
-                      <li key={i} className="text-xs text-gray-300 flex gap-2">
-                        <span className="text-[#FFC200]">›</span><span>{issue}</span>
+                      <li key={i} className="text-xs text-[#555] flex gap-2">
+                        <span className="text-cat font-condensed font-black">›</span><span>{issue}</span>
                       </li>
                     ))}
                   </ul>
                 )}
-                <p className="text-[10px] text-gray-600">{fmt(rec.scanned_at)}</p>
+                <p className="text-[10px] text-[#2A2A2A] font-condensed uppercase tracking-wide">{fmt(rec.scanned_at)}</p>
               </div>
             )
           })}
         </div>
       ) : (
-        <p className="text-xs text-gray-600 text-center py-4">{t('noInspections')}</p>
+        <p className="text-xs text-[#2A2A2A] text-center py-4 font-condensed uppercase tracking-widest">{t('noInspections')}</p>
       )}
     </div>
   )
@@ -196,11 +209,7 @@ export default function GarageView() {
     const unsub = onSnapshot(q, (snap) => {
       const list: Machine[] = snap.docs.map(d => {
         const data = d.data()
-        return {
-          id: d.id,
-          ...data,
-          inspections: (data.inspections ?? []) as InspectionRecord[],
-        } as Machine
+        return { id: d.id, ...data, inspections: (data.inspections ?? []) as InspectionRecord[] } as Machine
       })
       setMachines(list)
       if (selected) {
@@ -224,15 +233,10 @@ export default function GarageView() {
     try {
       const m = await addMachineAPI(nickname.trim(), pin.trim())
       await setDoc(machineDoc(m.id), {
-        nickname: m.nickname,
-        pin: m.pin,
-        model_family: m.model_family,
-        model_code: m.model_code,
-        serial_number: m.serial_number,
-        year: m.year ?? null,
-        description: m.description,
-        added_at: m.added_at,
-        inspections: [],
+        nickname: m.nickname, pin: m.pin, model_family: m.model_family,
+        model_code: m.model_code, serial_number: m.serial_number,
+        year: m.year ?? null, description: m.description,
+        added_at: m.added_at, inspections: [],
       })
       setNickname('')
       setPin('')
@@ -259,29 +263,41 @@ export default function GarageView() {
 
   return (
     <div className="space-y-4">
+      {/* Section header */}
+      <div className="border-b border-[#1A1A1A] pb-3 mb-4">
+        <h2 className="font-condensed font-black text-white text-2xl uppercase leading-none">{t('tabGarage')}</h2>
+        <p className="text-[#444] text-sm mt-1">Register and manage your heavy machinery fleet</p>
+      </div>
+
       {/* Add machine form */}
-      <div className="bg-gray-900 border border-[#FFC200]/20 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-[#FFC200] mb-3">{t('registerMachine')}</p>
+      <div className="bg-cat-black border-l-4 border-cat p-5">
+        <p className="text-xs font-condensed font-black text-cat uppercase tracking-widest mb-4">{t('registerMachine')}</p>
         <form onSubmit={handleAdd} className="space-y-2">
-          <input
-            className="w-full bg-gray-800 text-sm text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#FFC200]/40"
-            placeholder={t('nicknamePlaceholder')}
-            value={nickname}
-            onChange={e => setNickname(e.target.value)}
-            maxLength={60}
-          />
-          <input
-            className="w-full bg-gray-800 text-sm text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#FFC200]/40 font-mono tracking-wider"
-            placeholder={t('pinPlaceholder')}
-            value={pin}
-            onChange={e => setPin(e.target.value.toUpperCase())}
-            maxLength={17}
-          />
-          {addError && <p className="text-xs text-red-400">{addError}</p>}
+          <div>
+            <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-1.5">NICKNAME</label>
+            <input
+              className="w-full bg-[#111] border border-[#2A2A2A] rounded-none text-sm text-[#CCC] placeholder-[#333] px-3 py-2.5 outline-none focus:border-cat/40 transition-all"
+              placeholder={t('nicknamePlaceholder')}
+              value={nickname}
+              onChange={e => setNickname(e.target.value)}
+              maxLength={60}
+            />
+          </div>
+          <div>
+            <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-1.5">PIN</label>
+            <input
+              className="w-full bg-[#111] border border-[#2A2A2A] rounded-none text-sm text-[#CCC] placeholder-[#333] px-3 py-2.5 outline-none focus:border-cat/40 transition-all font-mono tracking-wider"
+              placeholder={t('pinPlaceholder')}
+              value={pin}
+              onChange={e => setPin(e.target.value.toUpperCase())}
+              maxLength={17}
+            />
+          </div>
+          {addError && <p className="text-xs text-red-400 font-condensed uppercase">{addError}</p>}
           <button
             type="submit"
             disabled={adding || pin.length !== 17 || !nickname.trim()}
-            className="w-full py-2 rounded-xl bg-[#FFC200] text-gray-900 text-xs font-semibold hover:bg-yellow-300 disabled:opacity-30 transition-colors"
+            className="w-full py-3 bg-cat text-black text-xs font-condensed font-black uppercase tracking-widest hover:bg-yellow-300 hover:shadow-[0_0_28px_rgba(255,205,17,0.55)] disabled:opacity-30 transition-all duration-150 active:scale-[0.98]"
           >
             {adding ? t('adding') : t('addMachine')}
           </button>
@@ -290,46 +306,48 @@ export default function GarageView() {
 
       {/* Machine list */}
       {loading ? (
-        <p className="text-xs text-gray-600 text-center py-6">{t('loadingGarage')}</p>
+        <p className="text-xs text-[#2A2A2A] text-center py-6 font-condensed uppercase tracking-widest">{t('loadingGarage')}</p>
       ) : machines.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-3xl mb-2">🏗</p>
-          <p className="text-sm text-gray-500">{t('garageEmpty')}</p>
-          <p className="text-xs text-gray-600 mt-1">{t('addFirst')}</p>
+        <div className="text-center py-10 bg-cat-black border border-[#1A1A1A]">
+          <p className="text-4xl mb-3 opacity-20">🏗</p>
+          <p className="font-condensed font-black text-[#333] uppercase tracking-widest">{t('garageEmpty')}</p>
+          <p className="text-xs text-[#222] font-condensed uppercase tracking-wide mt-1">{t('addFirst')}</p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium px-1">
-            {machines.length} Machine{machines.length !== 1 ? 's' : ''}
+          <p className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest px-1">
+            {machines.length} Machine{machines.length !== 1 ? 's' : ''} Registered
           </p>
           {machines.map(m => {
             const latest = m.inspections.at(-1)
-            const cs = latest ? CONDITION_STYLE[latest.overall_condition] : null
+            const border = latest ? CONDITION_BORDER[latest.overall_condition] : 'border-[#2A2A2A]'
+            const badge = latest ? CONDITION_BADGE[latest.overall_condition] : ''
+            const dot = latest ? CONDITION_DOT[latest.overall_condition] : ''
             return (
               <div
                 key={m.id}
-                className="bg-gray-900 border border-gray-700/40 rounded-2xl p-3.5 flex items-center gap-3 hover:border-[#FFC200]/30 transition-colors cursor-pointer group"
+                className={`bg-cat-black border-l-4 ${border} p-4 flex items-center gap-3 hover:bg-[#111] hover:shadow-[inset_4px_0_20px_rgba(255,205,17,0.07),0_0_0_1px_rgba(255,205,17,0.08)] transition-all duration-150 cursor-pointer group active:scale-[0.995]`}
                 onClick={() => setSelected(m)}
               >
-                <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl flex-shrink-0">🏗</div>
+                <div className="w-10 h-10 bg-[#111] border border-[#2A2A2A] flex items-center justify-center text-xl flex-shrink-0">🏗</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-100 leading-tight truncate">{m.nickname}</p>
-                  <p className="text-[11px] text-gray-500 truncate">{m.model_family} · {m.model_code}</p>
-                  <p className="text-[10px] text-gray-600 font-mono">{m.pin}</p>
+                  <p className="font-condensed font-black text-white uppercase leading-tight truncate">{m.nickname}</p>
+                  <p className="text-[11px] text-[#444] font-condensed uppercase truncate">{m.model_family} · {m.model_code}</p>
+                  <p className="text-[10px] text-[#2A2A2A] font-mono mt-0.5">{m.pin}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  {cs && (
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${cs.badge}`}>
-                      <span className={`w-1 h-1 rounded-full ${cs.dot}`} />{latest!.overall_condition}
+                  {latest && badge && (
+                    <span className={`flex items-center gap-1 px-2 py-0.5 border text-[10px] font-condensed font-bold uppercase ${badge}`}>
+                      <span className={`w-1 h-1 rounded-full ${dot}`} />{latest.overall_condition}
                     </span>
                   )}
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-gray-600 group-hover:text-gray-400">
-                      {m.inspections.length} inspection{m.inspections.length !== 1 ? 's' : ''}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-[#2A2A2A] group-hover:text-[#444] font-condensed uppercase transition-colors">
+                      {m.inspections.length} scan{m.inspections.length !== 1 ? 's' : ''}
                     </span>
                     <button
                       onClick={e => { e.stopPropagation(); handleRemove(m.id) }}
-                      className="text-gray-700 hover:text-red-400 text-sm leading-none transition-colors ml-1"
+                      className="text-[#222] hover:text-red-500 text-sm leading-none transition-colors"
                       aria-label="Remove machine"
                     >✕</button>
                   </div>

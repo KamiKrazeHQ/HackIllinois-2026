@@ -2,22 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-*, *::before, *::after { box-sizing: border-box; }
-html, body { height: 100%; }
-
-/* ── Text rendering ─────────────────────────────────────────────── */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1;
+:root {
+  --cat:      #FFCD11;
+  --cat-dark: #0D0D0D;
+  --cat-black:#1A1A1A;
+  --cat-gray: #2A2A2A;
 }
 
-/* ── Custom scrollbar ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; background: var(--cat-dark); }
+
+body {
+  font-family: 'Barlow', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #F5F5F5;
+}
+
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
 
-/* ── Selection ──────────────────────────────────────────────────── */
-::selection { background: rgba(255,194,0,0.25); color: inherit; }
+::selection { background: rgba(255, 205, 17, 0.35); color: inherit; }
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+@keyframes borderPulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,205,17,0.12); }
+  50%       { box-shadow: inset 0 0 0 1px rgba(255,205,17,0.4), inset 0 0 28px rgba(255,205,17,0.05); }
+}
+.animate-border-pulse { animation: borderPulse 1.8s ease-in-out infinite; }

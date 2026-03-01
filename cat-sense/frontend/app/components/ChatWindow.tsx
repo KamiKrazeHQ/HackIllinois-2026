@@ -55,17 +55,20 @@ function now() {
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-2.5 items-end mb-4">
-      <div className="w-7 h-7 rounded-lg bg-[#FFC200] flex items-center justify-center text-gray-900 font-bold text-[10px] flex-shrink-0">
-        CAT
+    <div className="flex gap-3 items-end mb-5">
+      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <div className="bg-cat w-8 h-8 rounded-full flex items-center justify-center shadow-[0_0_16px_rgba(255,205,17,0.6)] animate-cat-pulse">
+          <span className="font-condensed font-black text-black text-[9px] leading-none">CAT</span>
+        </div>
+        <span className="text-[7px] text-cat/40 font-condensed uppercase tracking-wide">AI</span>
       </div>
-      <div className="bg-gray-800 border border-gray-700/50 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+      <div className="bg-[#111827] border border-white/5 rounded-xl px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
         <div className="flex gap-1.5 items-center h-4">
           {[0, 1, 2].map(i => (
             <span
               key={i}
-              className="w-1.5 h-1.5 rounded-full bg-gray-500"
-              style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+              className="w-2 h-2 bg-cat rounded-full"
+              style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`, boxShadow: '0 0 6px rgba(255,205,17,0.8)' }}
             />
           ))}
         </div>
@@ -89,6 +92,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
     audio: t('widgetAudio'),
     sensors: t('widgetSensors'),
   }
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -113,6 +117,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, activeWidget])
 
+  // Re-translate all messages when language changes
   useEffect(() => {
     const current = messagesRef.current
     if (lang === 'en') {
@@ -253,11 +258,16 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative" style={{ background: 'radial-gradient(ellipse at top left, #1e293b 0%, #090D14 60%)' }}>
+      {/* Ambient glow blob */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-[#FFD700] opacity-[0.055] blur-3xl" />
+      </div>
+
       <audio ref={audioRef} hidden />
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2 scroll-smooth">
+      {/* Messages area */}
+      <div className={`flex-1 overflow-y-auto px-6 pt-6 pb-2 scroll-smooth relative transition-all duration-500 ${loading ? 'animate-border-pulse' : ''}`}>
         {messages.map((m, i) => (
           <MessageBubble
             key={i}
@@ -272,14 +282,14 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
 
         {loading && <TypingIndicator />}
 
-        {/* Suggestion chips — shown only at start */}
+        {/* Suggestion chips */}
         {showSuggestions && !loading && messages.length === 1 && (
-          <div className="flex flex-wrap gap-2 mb-4 pl-9">
+          <div className="flex flex-wrap gap-2 mb-4 pl-10">
             {SUGGESTIONS.map(s => (
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="text-xs px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:border-[#FFC200] hover:text-[#FFC200] transition-colors"
+                className="text-xs px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-cat/60 font-condensed font-bold uppercase tracking-wide hover:border-cat/50 hover:text-cat hover:bg-cat/8 hover:shadow-[0_0_16px_rgba(255,205,17,0.2)] active:scale-[0.97] -translate-y-0 hover:-translate-y-[2px] transition-all duration-150"
               >
                 {s}
               </button>
@@ -287,26 +297,25 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
           </div>
         )}
 
-        {/* Error banner with retry */}
+        {/* Error banner */}
         {errorText && !loading && (
-          <div className="mb-4 pl-9 animate-fade-slide-in">
-            <div className="bg-red-950/50 border border-red-800/60 rounded-2xl px-4 py-3 flex items-start gap-3">
-              <span className="text-red-400 text-base mt-0.5 flex-shrink-0">⚠</span>
+          <div className="mb-4 pl-10 animate-fade-slide-in">
+            <div className="bg-red-950/30 border-l-2 border-red-500 px-4 py-3 flex items-start gap-3">
+              <span className="text-red-500 text-base mt-0.5 flex-shrink-0">⚠</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-red-300">{errorText}</p>
+                <p className="text-sm text-red-400">{errorText}</p>
                 {failedMessage && (
                   <button
                     onClick={() => send(failedMessage)}
-                    className="mt-2 text-xs text-red-400 hover:text-red-200 underline underline-offset-2 transition-colors"
+                    className="mt-1.5 text-xs text-red-500 hover:text-red-300 underline underline-offset-2 transition-colors font-condensed font-bold uppercase"
                   >
-                    Retry: "{failedMessage.length > 40 ? failedMessage.slice(0, 40) + '…' : failedMessage}"
+                    Retry: &ldquo;{failedMessage.length > 40 ? failedMessage.slice(0, 40) + '…' : failedMessage}&rdquo;
                   </button>
                 )}
               </div>
               <button
                 onClick={() => { setErrorText(null); setFailedMessage(null) }}
-                className="text-red-700 hover:text-red-400 text-lg leading-none flex-shrink-0"
-                aria-label="Dismiss error"
+                className="text-red-900 hover:text-red-600 text-xl leading-none flex-shrink-0"
               >
                 ×
               </button>
@@ -314,30 +323,23 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
           </div>
         )}
 
-        {/* Inline widget — rendered after last AI message */}
+        {/* Inline widget panel */}
         {activeWidget && !loading && (
-          <div className="mb-4 pl-9">
-            <div className="bg-gray-900 border border-[#FFC200]/30 rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
-                <span className="text-xs font-semibold text-[#FFC200]">{WIDGET_LABEL[activeWidget]}</span>
+          <div className="mb-4 pl-10">
+            <div className="bg-cat-black border-l-4 border-cat overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2A2A2A]">
+                <span className="text-xs font-condensed font-black text-cat uppercase tracking-widest">{WIDGET_LABEL[activeWidget]}</span>
                 <button
                   onClick={() => setActiveWidget(null)}
-                  className="text-gray-600 hover:text-gray-400 text-lg leading-none"
-                  aria-label="Dismiss"
+                  className="text-[#444] hover:text-[#888] text-xl leading-none transition-colors"
                 >
                   ×
                 </button>
               </div>
               <div className="p-4">
-                {activeWidget === 'image' && (
-                  <ImageUpload sessionId={sessionId} onResult={handleVisionResult} />
-                )}
-                {activeWidget === 'audio' && (
-                  <AudioRecorder sessionId={sessionId} onResult={handleAudioResult} />
-                )}
-                {activeWidget === 'sensors' && (
-                  <SensorInput sessionId={sessionId} onResult={handleRiskResult} />
-                )}
+                {activeWidget === 'image'   && <ImageUpload sessionId={sessionId} onResult={handleVisionResult} />}
+                {activeWidget === 'audio'   && <AudioRecorder sessionId={sessionId} onResult={handleAudioResult} />}
+                {activeWidget === 'sensors' && <SensorInput sessionId={sessionId} onResult={handleRiskResult} />}
               </div>
             </div>
           </div>
@@ -346,12 +348,26 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input bar */}
-      <div className="flex-shrink-0 border-t border-gray-800 px-3 py-3">
-        <div className="flex gap-2 items-center bg-gray-800 rounded-2xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-[#FFC200]/40 transition-all">
+      {/* Floating input bar */}
+      <div
+        className="flex-shrink-0 relative px-4 py-4"
+        style={{
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(9,13,20,0.92)',
+          boxShadow: 'inset 0 1px 0 rgba(255,205,17,0.25), inset 0 4px 32px rgba(255,205,17,0.06), 0 -8px 32px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Gradient fade line above input */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cat/60 to-transparent" />
+        <div className="flex gap-2 items-center">
           <input
             ref={inputRef}
-            className="flex-1 bg-transparent py-1.5 text-sm text-gray-100 placeholder-gray-500 outline-none"
+            className="flex-1 bg-[#0f1624] border-2 border-cat/40 rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-cat/30 outline-none focus:border-cat focus:bg-[#111d2e] transition-all duration-150"
+            onFocus={e => {
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255,205,17,0.18), 0 0 32px rgba(255,205,17,0.12)'
+            }}
+            onBlur={e => { e.currentTarget.style.boxShadow = 'none' }}
             placeholder={t('chatPlaceholder')}
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -362,21 +378,19 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
           <button
             onClick={() => send(input)}
             disabled={loading || !input.trim()}
-            className="w-8 h-8 rounded-xl bg-[#FFC200] text-gray-900 flex items-center justify-center flex-shrink-0 disabled:opacity-30 hover:bg-yellow-300 transition-colors"
+            className="h-11 px-6 bg-cat text-cat-black font-condensed font-black uppercase tracking-widest text-sm flex-shrink-0 disabled:opacity-20 rounded-xl border-2 border-cat hover:bg-yellow-300 hover:border-yellow-300 hover:-translate-y-[2px] hover:shadow-[0_0_36px_rgba(255,205,17,0.8),0_4px_16px_rgba(255,205,17,0.3)] active:scale-[0.96] active:translate-y-0 transition-all duration-100"
             aria-label="Send"
           >
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-              <path d="M14 8L2 2l2.5 6L2 14l12-6z" fill="currentColor" />
-            </svg>
+            SEND
           </button>
         </div>
-        <p className="text-[10px] text-gray-700 text-center mt-1.5">{t('chatFooter')}</p>
+        <p className="text-[10px] text-cat/20 text-center mt-2 font-condensed uppercase tracking-widest">{t('chatFooter')}</p>
       </div>
 
       <style>{`
         @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-          40% { transform: translateY(-4px); opacity: 1; }
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+          40%            { transform: translateY(-5px); opacity: 1; }
         }
       `}</style>
     </div>

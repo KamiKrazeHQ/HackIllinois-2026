@@ -15,10 +15,22 @@ interface Props {
 }
 
 const RISK_COLOR: Record<string, string> = {
-  Low: 'text-green-400',
-  Medium: 'text-yellow-400',
-  High: 'text-orange-400',
+  Low:      'text-green-400',
+  Medium:   'text-cat',
+  High:     'text-orange-400',
   Critical: 'text-red-400',
+}
+const RISK_BORDER: Record<string, string> = {
+  Low:      'border-green-500',
+  Medium:   'border-cat',
+  High:     'border-orange-400',
+  Critical: 'border-red-500',
+}
+const RISK_BADGE: Record<string, string> = {
+  Low:      'bg-green-950 text-green-400 border-green-900',
+  Medium:   'bg-yellow-950 text-yellow-400 border-yellow-900',
+  High:     'bg-orange-950 text-orange-400 border-orange-900',
+  Critical: 'bg-red-950 text-red-400 border-red-900',
 }
 
 export default function SensorInput({ sessionId, onResult }: Props) {
@@ -49,71 +61,113 @@ export default function SensorInput({ sessionId, onResult }: Props) {
   }
 
   const SEV_KEYS: Record<'Minor' | 'Moderate' | 'Severe', string> = {
-    Minor: 'minor',
-    Moderate: 'moderate',
-    Severe: 'severe',
+    Minor: 'minor', Moderate: 'moderate', Severe: 'severe',
   }
+  const SEV_ACTIVE: Record<'Minor' | 'Moderate' | 'Severe', string> = {
+    Minor:    'bg-green-950 text-green-400 border border-green-800',
+    Moderate: 'bg-cat text-cat-black border border-cat',
+    Severe:   'bg-red-950 text-red-400 border border-red-800',
+  }
+
+  const riskBorder = result ? (RISK_BORDER[result.risk_level] ?? RISK_BORDER.Medium) : ''
+  const riskColor = result ? (RISK_COLOR[result.risk_level] ?? RISK_COLOR.Medium) : ''
+  const riskBadge = result ? (RISK_BADGE[result.risk_level] ?? RISK_BADGE.Medium) : ''
 
   return (
     <div className="space-y-4">
+      {/* Section header */}
+      <div className="border-b border-[#1A1A1A] pb-3 mb-4">
+        <h2 className="font-condensed font-black text-white text-2xl uppercase leading-none">{t('tabSensors')}</h2>
+        <p className="text-[#444] text-sm mt-1">Predictive failure probability &amp; downtime cost estimation</p>
+      </div>
+
+      {/* Inputs */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1.5">{t('tempLabel')}</label>
-          <input type="number" value={temp} onChange={e => setTemp(e.target.value)}
-            className="w-full bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#FFC200]/50" />
+          <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-2">{t('tempLabel')}</label>
+          <input
+            type="number"
+            value={temp}
+            onChange={e => setTemp(e.target.value)}
+            className="w-full bg-[#111] border border-[#2A2A2A] rounded-none px-4 py-3 text-sm text-white outline-none focus:border-cat/50 transition-all font-mono"
+          />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1.5">{t('pressureLabel')}</label>
-          <input type="number" value={pressure} onChange={e => setPressure(e.target.value)}
-            className="w-full bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#FFC200]/50" />
+          <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-2">{t('pressureLabel')}</label>
+          <input
+            type="number"
+            value={pressure}
+            onChange={e => setPressure(e.target.value)}
+            className="w-full bg-[#111] border border-[#2A2A2A] rounded-none px-4 py-3 text-sm text-white outline-none focus:border-cat/50 transition-all font-mono"
+          />
         </div>
       </div>
 
+      {/* Severity selector */}
       <div>
-        <label className="block text-xs text-gray-500 mb-1.5">{t('visualSeverityLabel')}</label>
+        <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-2">{t('visualSeverityLabel')}</label>
         <div className="flex gap-2">
           {(['Minor', 'Moderate', 'Severe'] as const).map(s => (
-            <button key={s} onClick={() => setSeverity(s)}
-              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
+            <button
+              key={s}
+              onClick={() => setSeverity(s)}
+              className={`flex-1 py-3 font-condensed font-black uppercase tracking-widest text-xs transition-all duration-150 active:scale-[0.97] ${
                 severity === s
-                  ? s === 'Minor' ? 'bg-green-700 text-white'
-                    : s === 'Moderate' ? 'bg-yellow-700 text-white'
-                    : 'bg-red-700 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  ? SEV_ACTIVE[s] + ' shadow-[0_0_16px_rgba(255,205,17,0.25)]'
+                  : 'bg-cat-black border border-[#2A2A2A] text-cat/40 hover:border-cat/40 hover:text-cat/80 hover:bg-cat/5'
               }`}
-            >{t(SEV_KEYS[s])}</button>
+            >
+              {t(SEV_KEYS[s])}
+            </button>
           ))}
         </div>
       </div>
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {error && <p className="text-red-400 text-xs font-condensed uppercase tracking-wide">{error}</p>}
 
-      <button onClick={submit} disabled={loading}
-        className="w-full bg-[#FFC200] text-gray-900 font-semibold py-3 rounded-xl text-sm disabled:opacity-40 hover:bg-yellow-300 transition-colors">
+      <button
+        onClick={submit}
+        disabled={loading}
+        className="w-full bg-cat text-black font-condensed font-black py-4 uppercase tracking-widest text-sm disabled:opacity-30 hover:bg-yellow-300 hover:shadow-[0_0_32px_rgba(255,205,17,0.6)] active:scale-[0.98] transition-all duration-150"
+      >
         {loading ? t('computing') : t('computeRisk')}
       </button>
 
       {result && !loading && (
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+        <div className={`bg-cat-black border-l-4 ${riskBorder} p-5 space-y-4 animate-fade-slide-in`}>
+          {/* Header */}
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-gray-500 uppercase tracking-wider">{t('riskAssessment')}</span>
-            <span className={`text-xl font-bold ${RISK_COLOR[result.risk_level] ?? 'text-white'}`}>
+            <span className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest">{t('riskAssessment')}</span>
+            <span className={`font-condensed font-black text-3xl uppercase ${riskColor}`}>
               {result.risk_level}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-gray-500">{t('failureProbability')}</p>
-              <p className="text-white font-semibold text-2xl">{result.failure_probability_14_days.toFixed(0)}%</p>
+
+          {/* Badge */}
+          <span className={`inline-block px-3 py-1 border text-[11px] font-condensed font-bold uppercase tracking-wide ${riskBadge}`}>
+            {result.risk_level} RISK
+          </span>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#111] border border-[#2A2A2A] p-4">
+              <p className="text-[9px] text-[#444] font-condensed font-bold uppercase tracking-widest mb-2">{t('failureProbability')}</p>
+              <p className={`font-mono font-black text-4xl leading-none ${riskColor}`}>
+                {result.failure_probability_14_days.toFixed(0)}
+                <span className="text-base text-[#444] font-normal">%</span>
+              </p>
+              <p className="text-[9px] text-[#333] font-condensed uppercase tracking-wider mt-1">14-DAY WINDOW</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">{t('estDowntimeCost')}</p>
-              <p className="text-white font-semibold">${result.estimated_downtime_cost_usd.toLocaleString()}</p>
+            <div className="bg-[#111] border border-[#2A2A2A] p-4">
+              <p className="text-[9px] text-[#444] font-condensed font-bold uppercase tracking-widest mb-2">{t('estDowntimeCost')}</p>
+              <p className="text-white font-condensed font-black text-2xl leading-none">${result.estimated_downtime_cost_usd.toLocaleString()}</p>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-2.5">
-            <p className="text-xs text-gray-500">{t('actionWindow')}</p>
-            <p className="text-sm text-gray-200">{result.recommended_action_window}</p>
+
+          {/* Action window */}
+          <div className="border-t border-[#1A1A1A] pt-4">
+            <p className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest mb-2">{t('actionWindow')}</p>
+            <p className="text-sm text-[#999] leading-snug">{result.recommended_action_window}</p>
           </div>
         </div>
       )}

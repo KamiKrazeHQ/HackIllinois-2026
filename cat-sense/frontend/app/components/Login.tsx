@@ -36,175 +36,86 @@ export default function Login() {
   }
 
   return (
-    <>
-      <style>{`
-        .lc-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
-        .lc-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
-        .lc-btn:active:not(:disabled) { transform: translateY(0); }
-        .lc-input::placeholder { color: #666; }
-        .lc-input:focus { border-color: #D4A500 !important; outline: none; }
-      `}</style>
-
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem',
-        backgroundColor: '#030712',
-      }}>
-        {/* Caution-tape stripe border */}
-        <div style={{
-          padding: '8px',
-          borderRadius: '28px',
-          background: 'repeating-linear-gradient(45deg, #2E2725 0px, #2E2725 8px, #D4A500 8px, #D4A500 16px)',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-        }}>
-          <div style={{
-            backgroundColor: '#111827',
-            borderRadius: '20px',
-            padding: '2.5rem',
-            width: '360px',
-          }}>
-            {/* Logo */}
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '48px',
-                height: '48px',
-                backgroundColor: '#D4A500',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: 900,
-                color: '#111',
-                letterSpacing: '-0.5px',
-                marginBottom: '12px',
-              }}>CAT</div>
-              <h1 style={{
-                margin: 0,
-                fontSize: '1.6rem',
-                fontWeight: 700,
-                color: '#fff',
-                letterSpacing: '-0.03em',
-              }}>CAT Sense</h1>
-              <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
-                Heavy Machinery Diagnostics
-              </p>
-            </div>
-
-            {/* Email */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', fontWeight: 500, color: '#d1d5db' }}>
-                Email
-              </label>
-              <input
-                className="lc-input"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="you@example.com"
-                style={{
-                  width: '100%',
-                  padding: '0.7rem 1rem',
-                  fontSize: '0.9rem',
-                  boxSizing: 'border-box',
-                  borderRadius: '12px',
-                  border: '1px solid #374151',
-                  backgroundColor: '#1f2937',
-                  color: '#fff',
-                  transition: 'border-color 0.15s',
-                }}
-              />
-            </div>
-
-            {/* Password */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', fontWeight: 500, color: '#d1d5db' }}>
-                Password
-              </label>
-              <input
-                className="lc-input"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="••••••••"
-                style={{
-                  width: '100%',
-                  padding: '0.7rem 1rem',
-                  fontSize: '0.9rem',
-                  boxSizing: 'border-box',
-                  borderRadius: '12px',
-                  border: '1px solid #374151',
-                  backgroundColor: '#1f2937',
-                  color: '#fff',
-                  transition: 'border-color 0.15s',
-                }}
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <p style={{
-                marginBottom: '1rem',
-                padding: '0.6rem 0.9rem',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.3)',
-                color: '#fca5a5',
-                fontSize: '0.78rem',
-                margin: '0 0 1rem 0',
-              }}>{error}</p>
-            )}
-
-            {/* Login button */}
-            <button
-              className="lc-btn"
-              onClick={handleLogin}
-              disabled={!!loading || !email || !password}
-              style={{
-                width: '100%',
-                padding: '0.8rem',
-                marginBottom: '0.75rem',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                border: 'none',
-                borderRadius: '14px',
-                backgroundColor: '#D4A500',
-                color: '#111',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading === 'login' ? 'Signing in…' : 'Login'}
-            </button>
-
-            {/* Sign up button */}
-            <button
-              className="lc-btn"
-              onClick={handleSignUp}
-              disabled={!!loading || !email || !password}
-              style={{
-                width: '100%',
-                padding: '0.8rem',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                border: '2px solid #D4A500',
-                borderRadius: '14px',
-                backgroundColor: 'transparent',
-                color: '#D4A500',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading === 'signup' ? 'Creating account…' : 'Sign Up'}
-            </button>
-          </div>
+    <div className="min-h-screen bg-cat-dark flex flex-col">
+      {/* Yellow header strip */}
+      <div className="bg-cat px-8 py-5 flex items-center gap-4">
+        <div className="bg-cat-black px-3 py-2 flex-shrink-0">
+          <span className="font-condensed font-black text-cat text-xl leading-none tracking-tighter">CAT</span>
+        </div>
+        <div>
+          <h1 className="font-condensed font-black text-cat-black text-2xl uppercase leading-none">CAT SENSE</h1>
+          <p className="font-condensed text-cat-black/60 text-[11px] uppercase tracking-[0.2em] font-semibold leading-none mt-0.5">
+            Heavy Machinery Diagnostics
+          </p>
         </div>
       </div>
-    </>
+
+      {/* Login form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Card with yellow left border */}
+          <div className="bg-cat-black border-l-4 border-cat p-8">
+            <h2 className="font-condensed font-black text-white text-3xl uppercase leading-none mb-1">ACCESS SYSTEM</h2>
+            <p className="text-[#555] text-sm mb-8">Enter your credentials to continue</p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-2">
+                  EMAIL ADDRESS
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  placeholder="you@example.com"
+                  className="w-full bg-[#111] border border-[#2A2A2A] rounded-none px-4 py-3 text-sm text-white placeholder-[#333] outline-none focus:border-cat/60 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block font-condensed font-bold uppercase tracking-widest text-[10px] text-cat mb-2">
+                  PASSWORD
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  placeholder="••••••••"
+                  className="w-full bg-[#111] border border-[#2A2A2A] rounded-none px-4 py-3 text-sm text-white placeholder-[#333] outline-none focus:border-cat/60 transition-all"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-5 border-l-2 border-red-500 pl-4 py-2 bg-red-950/30">
+                <p className="text-xs text-red-400">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <button
+                onClick={handleLogin}
+                disabled={!!loading || !email || !password}
+                className="w-full py-4 bg-cat text-black font-condensed font-black uppercase tracking-widest text-sm disabled:opacity-30 hover:bg-yellow-300 hover:shadow-[0_0_36px_rgba(255,205,17,0.65)] active:scale-[0.98] transition-all duration-150"
+              >
+                {loading === 'login' ? 'SIGNING IN...' : 'SIGN IN'}
+              </button>
+              <button
+                onClick={handleSignUp}
+                disabled={!!loading || !email || !password}
+                className="w-full py-4 border border-cat/20 text-cat/50 font-condensed font-black uppercase tracking-widest text-sm disabled:opacity-30 hover:border-cat hover:text-cat hover:bg-cat/5 hover:shadow-[0_0_20px_rgba(255,205,17,0.15)] active:scale-[0.98] transition-all duration-150"
+              >
+                {loading === 'signup' ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-center text-[#333] text-[10px] font-condensed uppercase tracking-widest mt-6">
+            CAT SENSE · Diagnostic Platform
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }

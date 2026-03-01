@@ -23,16 +23,24 @@ interface Props {
   isLast?: boolean
 }
 
-const SEV_STYLE: Record<string, { badge: string; bar: string }> = {
-  Minor:    { badge: 'bg-green-900/60 text-green-300 border-green-700',    bar: 'bg-green-500' },
-  Moderate: { badge: 'bg-yellow-900/60 text-yellow-300 border-yellow-700', bar: 'bg-yellow-400' },
-  Severe:   { badge: 'bg-red-900/60 text-red-300 border-red-700',          bar: 'bg-red-500' },
+const SEV_BORDER: Record<string, string> = {
+  Minor:    'border-green-500',
+  Moderate: 'border-cat',
+  Severe:   'border-red-500',
+}
+const SEV_BADGE: Record<string, string> = {
+  Minor:    'bg-green-950 text-green-400 border-green-900',
+  Moderate: 'bg-yellow-950 text-yellow-400 border-yellow-900',
+  Severe:   'bg-red-950 text-red-400 border-red-900',
 }
 
 function CatAvatar() {
   return (
-    <div className="w-7 h-7 rounded-lg bg-[#FFC200] flex items-center justify-center text-gray-900 font-bold text-[10px] flex-shrink-0 shadow-sm">
-      CAT
+    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+      <div className="bg-cat w-8 h-8 rounded-full flex items-center justify-center shadow-[0_0_16px_rgba(255,205,17,0.55)]">
+        <span className="font-condensed font-black text-black text-[9px] leading-none">CAT</span>
+      </div>
+      <span className="text-[7px] text-cat/40 font-condensed uppercase tracking-wide">AI</span>
     </div>
   )
 }
@@ -40,23 +48,23 @@ function CatAvatar() {
 export default function MessageBubble({ role, content, diagnosis, displayDiagnosis, timestamp, isLast }: Props) {
   const { t } = useT()
   const isUser = role === 'user'
-  const sev = diagnosis?.severity ? SEV_STYLE[diagnosis.severity] ?? SEV_STYLE.Minor : null
-
+  const sevBorder = diagnosis?.severity ? SEV_BORDER[diagnosis.severity] ?? SEV_BORDER.Moderate : SEV_BORDER.Moderate
+  const sevBadge = diagnosis?.severity ? SEV_BADGE[diagnosis.severity] ?? SEV_BADGE.Moderate : SEV_BADGE.Moderate
   const causes = displayDiagnosis?.probable_causes ?? diagnosis?.probable_causes
   const action = displayDiagnosis?.recommended_action ?? diagnosis?.recommended_action
 
   return (
-    <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 items-end animate-fade-slide-in`}>
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-5 items-end animate-fade-slide-in`}>
       {/* Avatar — AI only */}
-      {!isUser ? <CatAvatar /> : <div className="w-7 flex-shrink-0" />}
+      {!isUser ? <CatAvatar /> : <div className="w-8 h-8 flex-shrink-0" />}
 
-      <div className={`max-w-[78%] space-y-2 ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
+      <div className={`max-w-[82%] space-y-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Bubble */}
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-card ${
+          className={`px-4 py-3 text-sm leading-relaxed transition-all duration-200 ${
             isUser
-              ? 'bg-[#FFC200] text-gray-900 font-medium rounded-br-sm'
-              : 'bg-gray-800/90 text-gray-100 rounded-bl-sm border border-gray-700/40 backdrop-blur-sm'
+              ? 'bg-cat text-black font-medium rounded-xl rounded-br-sm border-r-2 border-yellow-300 hover:brightness-110 hover:-translate-y-[1px] hover:shadow-[0_4px_20px_rgba(255,205,17,0.35)]'
+              : 'bg-[#111827] text-gray-100 rounded-xl rounded-bl-sm border border-white/5 hover:border-white/10 hover:-translate-y-[1px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
           }`}
         >
           {content}
@@ -64,41 +72,38 @@ export default function MessageBubble({ role, content, diagnosis, displayDiagnos
 
         {/* Timestamp */}
         {timestamp && isLast && (
-          <span className={`text-[10px] text-gray-600 px-1 animate-fade-in ${isUser ? 'self-end' : 'self-start'}`}>
+          <span className={`text-[10px] text-[#2A2A2A] px-1 font-condensed uppercase tracking-wider ${isUser ? 'self-end' : 'self-start'}`}>
             {timestamp}
           </span>
         )}
 
-        {/* Diagnosis card — AI only */}
-        {!isUser && diagnosis && sev && (
-          <div className="w-full rounded-xl border border-gray-700/50 bg-gray-900/80 overflow-hidden shadow-card animate-slide-down backdrop-blur-sm">
-            {/* Severity bar */}
-            <div className={`h-0.5 w-full ${sev.bar}`} style={{ boxShadow: `0 0 8px var(--tw-shadow-color)` }} />
-
-            <div className="p-3 space-y-2.5 text-xs">
+        {/* Diagnosis card */}
+        {!isUser && diagnosis && (
+          <div className={`w-full bg-[#111827] border-l-4 ${sevBorder} rounded-xl rounded-tl-none overflow-hidden animate-slide-down`}>
+            <div className="px-4 py-3 space-y-3 text-xs">
               {/* Stats row */}
               <div className="flex flex-wrap gap-2 items-center">
-                <span className={`px-2 py-0.5 rounded-full border text-[11px] font-semibold ${sev.badge}`}>
+                <span className={`px-2.5 py-1 border text-[11px] font-condensed font-bold uppercase tracking-wide ${sevBadge}`}>
                   {diagnosis.severity}
                 </span>
-                <span className="text-gray-500">
-                  Risk: <span className="text-gray-200 font-medium">{diagnosis.failure_probability}</span>
+                <span className="text-[#444] text-[9px] font-condensed font-bold uppercase tracking-widest bg-[#111] border border-[#2A2A2A] px-2.5 py-1">
+                  RISK: <span className="text-white font-mono">{diagnosis.failure_probability}</span>
                 </span>
-                <span className="text-gray-500">
-                  Cost: <span className="text-gray-200 font-medium">{diagnosis.estimated_cost}</span>
+                <span className="text-[#444] text-[9px] font-condensed font-bold uppercase tracking-widest bg-[#111] border border-[#2A2A2A] px-2.5 py-1">
+                  COST: <span className="text-white">{diagnosis.estimated_cost}</span>
                 </span>
               </div>
 
               {/* Probable causes */}
               {causes && causes.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-medium">
+                  <p className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest mb-2">
                     {t('probableCauses')}
                   </p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {causes.map((c, i) => (
-                      <li key={i} className="text-gray-300 flex gap-2 leading-snug">
-                        <span className="text-[#FFC200] mt-px">›</span>
+                      <li key={i} className="flex gap-2 text-[#888] leading-snug">
+                        <span className="text-cat flex-shrink-0 font-condensed font-black">›</span>
                         <span>{c}</span>
                       </li>
                     ))}
@@ -106,13 +111,16 @@ export default function MessageBubble({ role, content, diagnosis, displayDiagnos
                 </div>
               )}
 
-              {/* Action */}
+              {/* Recommended action */}
               {action && (
-                <div className="border-t border-gray-800 pt-2.5">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-medium">
+                <div className="border-t border-[#1A1A1A] pt-3">
+                  <p className="text-[9px] text-cat font-condensed font-black uppercase tracking-widest mb-2">
                     {t('recommendedAction')}
                   </p>
-                  <p className="text-gray-200 leading-snug">{action}</p>
+                  <div className="flex gap-2.5">
+                    <div className="w-0.5 flex-shrink-0 bg-cat mt-0.5 mb-0.5" />
+                    <p className="text-[#BBB] leading-snug">{action}</p>
+                  </div>
                 </div>
               )}
             </div>

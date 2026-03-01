@@ -28,24 +28,9 @@ interface RiskResult { failure_probability_14_days: number; estimated_downtime_c
 const TABS = ['Chat', 'Vision', 'Audio', 'Sensors', 'Report', 'Garage', 'Inspect'] as const
 type Tab = typeof TABS[number]
 
-const TAB_ICONS: Record<Tab, string> = {
-  Chat: '💬',
-  Vision: '📷',
-  Audio: '🎙',
-  Sensors: '📊',
-  Report: '📋',
-  Garage: '🏗',
-  Inspect: '🔩',
-}
-
 const TAB_KEY: Record<Tab, string> = {
-  Chat: 'tabChat',
-  Vision: 'tabVision',
-  Audio: 'tabAudio',
-  Sensors: 'tabSensors',
-  Report: 'tabReport',
-  Garage: 'tabGarage',
-  Inspect: 'tabInspect',
+  Chat: 'tabChat', Vision: 'tabVision', Audio: 'tabAudio', Sensors: 'tabSensors',
+  Report: 'tabReport', Garage: 'tabGarage', Inspect: 'tabInspect',
 }
 
 export default function Home() {
@@ -73,98 +58,97 @@ export default function Home() {
   if (user === null) return <Login />
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto relative">
-      {/* Ambient glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 max-w-2xl mx-auto"
-        style={{
-          background: 'radial-gradient(ellipse 60% 30% at 80% 0%, rgba(255,194,0,0.07) 0%, transparent 70%)',
-        }}
-      />
+    <div className="flex flex-col h-screen" style={{ background: 'radial-gradient(ellipse at top left, #1a2236 0%, #090D14 55%)' }}>
 
-      {/* Header */}
-      <header className="border-b border-gray-800/80 px-4 py-3 flex items-center justify-between flex-shrink-0 backdrop-blur-sm bg-gray-950/80 sticky top-0 z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#FFC200] rounded-lg flex items-center justify-center text-gray-900 font-bold text-sm shadow-glow-cat">
-            CAT
+      {/* ── Yellow Header ── */}
+      <header className="flex-shrink-0 bg-cat shadow-[0_8px_40px_rgba(0,0,0,0.7)]">
+        <div className="px-8 py-6 flex items-center justify-between gap-6">
+          {/* Brand */}
+          <div className="flex items-center gap-5">
+            <div className="bg-black px-4 py-3 flex items-center justify-center flex-shrink-0">
+              <span className="font-condensed font-black text-cat text-2xl leading-none tracking-tighter">CAT</span>
+            </div>
+            <div>
+              <h1 className="font-condensed font-black text-black text-5xl uppercase leading-none tracking-tight">
+                CAT SENSE
+              </h1>
+              <p className="font-condensed text-black/50 text-xs uppercase tracking-[0.3em] font-bold leading-none mt-1.5">
+                {t('appSubtitle')}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-white leading-none tracking-tight">CAT Sense</h1>
-            <p className="text-[10px] text-gray-500 leading-none mt-0.5 tracking-wide">{t('appSubtitle')}</p>
+
+          {/* Right side */}
+          <div className="flex items-center gap-3">
+            {/* Active data indicators */}
+            {(vision || audio || risk) && (
+              <div className="hidden sm:flex gap-1 mr-1">
+                {vision && (
+                  <span className="px-3 py-2 bg-black text-cat text-[11px] font-condensed font-black uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cat animate-cat-pulse" />VIS
+                  </span>
+                )}
+                {audio && (
+                  <span className="px-3 py-2 bg-black text-blue-400 text-[11px] font-condensed font-black uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-cat-pulse" />AUD
+                  </span>
+                )}
+                {risk && (
+                  <span className="px-3 py-2 bg-black text-orange-400 text-[11px] font-condensed font-black uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-cat-pulse" />SNS
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Language switcher */}
+            <div className="flex items-center">
+              {translating && <Loader2 className="h-4 w-4 animate-spin text-black mr-2" />}
+              {LANGS.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  disabled={translating}
+                  title={l.name}
+                  className={`px-4 py-2.5 text-sm font-condensed font-black uppercase tracking-widest transition-all duration-150 disabled:opacity-40 active:scale-95 ${
+                    lang === l.code
+                      ? 'bg-black text-cat shadow-[0_0_16px_rgba(0,0,0,0.5)]'
+                      : 'text-black/60 hover:bg-black/15 hover:text-black'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => signOut(getAuth(app))}
+              className="text-black/40 hover:text-black text-xs font-condensed font-bold uppercase tracking-widest transition-all duration-150 ml-1 hover:underline active:scale-95"
+            >
+              {t('signOut')}
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Status badges */}
-          {(diagnosis || vision || audio || risk) && (
-            <div className="flex gap-1.5 items-center">
-              {vision && (
-                <span className="flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{t('tabVision')}
-                </span>
-              )}
-              {audio && (
-                <span className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />{t('tabAudio')}
-                </span>
-              )}
-              {risk && (
-                <span className="flex items-center gap-1 text-[10px] text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />{t('tabSensors')}
-                </span>
-              )}
-            </div>
-          )}
 
-          {/* Language switcher */}
-          <div className="flex gap-0.5 items-center">
-            {translating && <Loader2 className="h-3 w-3 animate-spin text-[#FFC200] mr-1" />}
-            {LANGS.map(l => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                disabled={translating}
-                title={l.name}
-                className={`px-1.5 py-0.5 text-[10px] font-bold rounded transition-all disabled:opacity-40 ${
-                  lang === l.code
-                    ? 'bg-[#FFC200] text-gray-900'
-                    : 'text-gray-600 hover:text-gray-300'
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-[10px] text-gray-700 font-mono tabular-nums hidden sm:block">{sessionId}</span>
-          <button
-            onClick={() => signOut(getAuth(app))}
-            className="text-[10px] text-gray-600 hover:text-gray-300 border border-gray-800 hover:border-gray-600 rounded-lg px-2 py-1 transition-colors"
-          >
-            {t('signOut')}
-          </button>
+        {/* ── Tab bar (black strip) ── */}
+        <div className="bg-black flex overflow-x-auto border-t-2 border-cat/30">
+          {TABS.map(tabName => (
+            <button
+              key={tabName}
+              onClick={() => setTab(tabName)}
+              className={`relative px-8 py-5 font-condensed font-black text-base uppercase tracking-widest whitespace-nowrap transition-all duration-150 flex-shrink-0 border-r border-cat/10 active:scale-[0.97] ${
+                tab === tabName
+                  ? 'text-cat bg-[#0D0D0D] border-b-[3px] border-b-cat shadow-[inset_0_-12px_30px_rgba(255,205,17,0.13),0_0_0_0_transparent]'
+                  : 'text-cat/45 hover:text-cat hover:bg-cat/5 hover:shadow-[inset_0_-8px_20px_rgba(255,205,17,0.07)] border-b-[3px] border-b-transparent'
+              }`}
+            >
+              {t(TAB_KEY[tabName])}
+            </button>
+          ))}
         </div>
       </header>
 
-      {/* Tab bar */}
-      <nav className="border-b border-gray-800/80 px-3 flex gap-0.5 flex-shrink-0 bg-gray-950/60 backdrop-blur-sm">
-        {TABS.map(tabName => (
-          <button
-            key={tabName}
-            onClick={() => setTab(tabName)}
-            className={`px-3 py-2.5 text-xs font-medium transition-all relative rounded-t-md ${
-              tab === tabName ? 'text-[#FFC200]' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
-            }`}
-          >
-            <span className="mr-1">{TAB_ICONS[tabName]}</span>{t(TAB_KEY[tabName])}
-            {tab === tabName && (
-              <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#FFC200] rounded-full shadow-[0_0_6px_rgba(255,194,0,0.6)]" />
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Content */}
+      {/* ── Content ── */}
       <main className="flex-1 overflow-hidden">
         {tab === 'Chat' && (
           <ChatWindow
@@ -176,21 +160,15 @@ export default function Home() {
           />
         )}
         {tab !== 'Chat' && (
-          <div className="h-full overflow-y-auto p-4">
-            {tab === 'Vision' && (
-              <ImageUpload sessionId={sessionId} onResult={setVision} />
-            )}
-            {tab === 'Audio' && (
-              <AudioRecorder sessionId={sessionId} onResult={setAudio} />
-            )}
-            {tab === 'Sensors' && (
-              <SensorInput sessionId={sessionId} onResult={setRisk} />
-            )}
-            {tab === 'Report' && (
-              <ReportCard diagnosis={diagnosis} vision={vision} audio={audio} risk={risk} />
-            )}
-            {tab === 'Garage' && <GarageView />}
-            {tab === 'Inspect' && <InspectionAnalyzer />}
+          <div className="h-full overflow-y-auto p-6">
+            <div className="max-w-5xl mx-auto">
+              {tab === 'Vision'  && <ImageUpload sessionId={sessionId} onResult={setVision} />}
+              {tab === 'Audio'   && <AudioRecorder sessionId={sessionId} onResult={setAudio} />}
+              {tab === 'Sensors' && <SensorInput sessionId={sessionId} onResult={setRisk} />}
+              {tab === 'Report'  && <ReportCard diagnosis={diagnosis} vision={vision} audio={audio} risk={risk} />}
+              {tab === 'Garage'  && <GarageView />}
+              {tab === 'Inspect' && <InspectionAnalyzer />}
+            </div>
           </div>
         )}
       </main>
