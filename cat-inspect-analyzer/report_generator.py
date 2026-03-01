@@ -10,6 +10,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table,
     TableStyle, Image, HRFlowable
 )
+from image_annotator import annotate_image
 
 SEVERITY_COLORS = {
     "Critical": colors.HexColor("#C00000"),
@@ -47,14 +48,15 @@ def get_styles():
 
 def colored_section(title, color=colors.HexColor("#1F3864"), width=7.5*inch):
     data = [[Paragraph(f"  {title}", ParagraphStyle(
-        name="tmp", fontSize=12, fontName="Helvetica-Bold", textColor=colors.white
+        name="tmp_" + title[:8].replace(" ", ""),
+        fontSize=12, fontName="Helvetica-Bold", textColor=colors.white
     ))]]
     t = Table(data, colWidths=[width])
     t.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,-1), color),
-        ("TOPPADDING",    (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
-        ("LEFTPADDING",   (0,0), (-1,-1), 8),
+        ("BACKGROUND",    (0, 0), (-1, -1), color),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
     ]))
     return t
 
@@ -84,9 +86,10 @@ def generate_pdf_report(result, output_dir="reports"):
     story.append(Spacer(1, 10))
 
     # ── SUMMARY BAR ──────────────────────────────────────────────────────────
-    condition = analysis.get("overall_condition", "N/A")
-    score     = analysis.get("overall_score", "N/A")
-    priority  = analysis.get("estimated_repair_priority", "N/A")
+    condition  = analysis.get("overall_condition", "N/A")
+    score      = analysis.get("overall_score", "N/A")
+    priority   = analysis.get("estimated_repair_priority", "N/A")
+    errors     = analysis.get("errors_found", [])
     cond_color = CONDITION_COLORS.get(condition, colors.gray)
     pri_color  = PRIORITY_COLORS.get(priority, colors.gray)
 
@@ -94,19 +97,19 @@ def generate_pdf_report(result, output_dir="reports"):
         Paragraph(f"<b>Condition</b><br/>{condition}", styles["BodyText2"]),
         Paragraph(f"<b>Score</b><br/>{score} / 10", styles["BodyText2"]),
         Paragraph(f"<b>Repair Priority</b><br/>{priority}", styles["BodyText2"]),
-        Paragraph(f"<b>Errors Found</b><br/>{len(analysis.get('errors_found', []))}", styles["BodyText2"]),
+        Paragraph(f"<b>Errors Found</b><br/>{len(errors)}", styles["BodyText2"]),
     ]]
     summary_table = Table(summary_data, colWidths=[1.875*inch]*4)
     summary_table.setStyle(TableStyle([
-        ("BOX",           (0,0), (-1,-1), 1, colors.HexColor("#CCCCCC")),
-        ("INNERGRID",     (0,0), (-1,-1), 0.5, colors.HexColor("#CCCCCC")),
-        ("BACKGROUND",    (0,0), (0,0), cond_color),
-        ("BACKGROUND",    (2,0), (2,0), pri_color),
-        ("TEXTCOLOR",     (0,0), (0,0), colors.white),
-        ("TEXTCOLOR",     (2,0), (2,0), colors.white),
-        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
-        ("TOPPADDING",    (0,0), (-1,-1), 10),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+        ("BOX",           (0, 0), (-1, -1), 1, colors.HexColor("#CCCCCC")),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+        ("BACKGROUND",    (0, 0), (0, 0), cond_color),
+        ("BACKGROUND",    (2, 0), (2, 0), pri_color),
+        ("TEXTCOLOR",     (0, 0), (0, 0), colors.white),
+        ("TEXTCOLOR",     (2, 0), (2, 0), colors.white),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
     ]))
     story.append(summary_table)
     story.append(Spacer(1, 14))
@@ -121,7 +124,6 @@ def generate_pdf_report(result, output_dir="reports"):
     story.append(colored_section("Errors Found", color=colors.HexColor("#C00000")))
     story.append(Spacer(1, 6))
 
-    errors = analysis.get("errors_found", [])
     if not errors:
         story.append(Paragraph("No errors detected.", styles["BodyText2"]))
     else:
@@ -141,22 +143,22 @@ def generate_pdf_report(result, output_dir="reports"):
             colWidths=[0.6*inch, 0.7*inch, 0.8*inch, 1.6*inch, 1.0*inch, 1.4*inch, 1.1*inch]
         )
         ts = TableStyle([
-            ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#1F3864")),
-            ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
-            ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
-            ("FONTSIZE",      (0,0), (-1,-1), 8),
-            ("BOX",           (0,0), (-1,-1), 0.5, colors.HexColor("#CCCCCC")),
-            ("INNERGRID",     (0,0), (-1,-1), 0.5, colors.HexColor("#CCCCCC")),
-            ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#F5F5F5")]),
-            ("VALIGN",        (0,0), (-1,-1), "TOP"),
-            ("TOPPADDING",    (0,0), (-1,-1), 5),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+            ("BACKGROUND",     (0, 0), (-1, 0), colors.HexColor("#1F3864")),
+            ("TEXTCOLOR",      (0, 0), (-1, 0), colors.white),
+            ("FONTNAME",       (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE",       (0, 0), (-1, -1), 8),
+            ("BOX",            (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("INNERGRID",      (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F5F5F5")]),
+            ("VALIGN",         (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING",     (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING",  (0, 0), (-1, -1), 5),
         ])
         for i, error in enumerate(errors):
             sev_color = SEVERITY_COLORS.get(error.get("severity", ""), colors.gray)
-            ts.add("BACKGROUND", (1, i+1), (1, i+1), sev_color)
-            ts.add("TEXTCOLOR",  (1, i+1), (1, i+1), colors.white)
-            ts.add("FONTNAME",   (1, i+1), (1, i+1), "Helvetica-Bold")
+            ts.add("BACKGROUND", (1, i + 1), (1, i + 1), sev_color)
+            ts.add("TEXTCOLOR",  (1, i + 1), (1, i + 1), colors.white)
+            ts.add("FONTNAME",   (1, i + 1), (1, i + 1), "Helvetica-Bold")
         error_table.setStyle(ts)
         story.append(error_table)
 
@@ -176,14 +178,100 @@ def generate_pdf_report(result, output_dir="reports"):
         story.append(Paragraph(analysis.get("follow_up_notes", ""), styles["BodyText2"]))
         story.append(Spacer(1, 14))
 
-    # ── ORIGINAL IMAGE ───────────────────────────────────────────────────────
-    story.append(colored_section("Inspected Image"))
+    # ── ANNOTATED IMAGE ──────────────────────────────────────────────────────
+    story.append(colored_section("Annotated Inspection Image"))
     story.append(Spacer(1, 8))
+
+    annotated_path = None
     try:
-        img = Image(result["image_path"], width=4*inch, height=3*inch, kind="proportional")
-        story.append(img)
-    except Exception:
-        story.append(Paragraph("(Image could not be embedded)", styles["SmallText"]))
+        annotated_path = annotate_image(result["image_path"], errors, output_dir)
+        img_obj = Image(annotated_path, width=5*inch, height=4*inch, kind="proportional")
+        story.append(img_obj)
+    except Exception as e:
+        print(f"  ⚠️  Could not annotate image: {e}")
+        try:
+            img_obj = Image(result["image_path"], width=5*inch, height=4*inch, kind="proportional")
+            story.append(img_obj)
+        except Exception:
+            story.append(Paragraph("(Image could not be embedded)", styles["SmallText"]))
+
+    story.append(Spacer(1, 14))
+
+    # ── ISSUE MAP LEGEND ─────────────────────────────────────────────────────
+    mapped_errors = [e for e in errors if e.get("location_xy")]
+    if mapped_errors:
+        story.append(colored_section("Issue Map Legend"))
+        story.append(Spacer(1, 6))
+
+        # Color key row
+        key_data = [[
+            Paragraph("<b>● Critical</b>", ParagraphStyle(
+                name="crit", fontSize=9, fontName="Helvetica-Bold",
+                textColor=colors.HexColor("#C00000"))),
+            Paragraph("<b>● High</b>", ParagraphStyle(
+                name="high", fontSize=9, fontName="Helvetica-Bold",
+                textColor=colors.HexColor("#E26B0A"))),
+            Paragraph("<b>● Medium</b>", ParagraphStyle(
+                name="med", fontSize=9, fontName="Helvetica-Bold",
+                textColor=colors.HexColor("#E6A817"))),
+            Paragraph("<b>● Low</b>", ParagraphStyle(
+                name="low", fontSize=9, fontName="Helvetica-Bold",
+                textColor=colors.HexColor("#375623"))),
+        ]]
+        key_table = Table(key_data, colWidths=[1.875*inch]*4)
+        key_table.setStyle(TableStyle([
+            ("BOX",           (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("INNERGRID",     (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("BACKGROUND",    (0, 0), (-1, -1), colors.HexColor("#F9F9F9")),
+            ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+            ("TOPPADDING",    (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(key_table)
+        story.append(Spacer(1, 8))
+
+        # Legend table
+        legend_header = [["#", "Severity", "Category", "Description", "Location"]]
+        legend_rows = []
+        marker_num = 1
+        for e in errors:
+            if e.get("location_xy"):
+                legend_rows.append([
+                    str(marker_num),
+                    e.get("severity", ""),
+                    e.get("category", ""),
+                    Paragraph(e.get("description", ""), styles["SmallText"]),
+                    Paragraph(e.get("location", ""), styles["SmallText"]),
+                ])
+                marker_num += 1
+
+        legend_table = Table(
+            legend_header + legend_rows,
+            colWidths=[0.35*inch, 0.8*inch, 0.9*inch, 3.3*inch, 2.15*inch]
+        )
+        lts = TableStyle([
+            ("BACKGROUND",     (0, 0), (-1, 0), colors.HexColor("#1F3864")),
+            ("TEXTCOLOR",      (0, 0), (-1, 0), colors.white),
+            ("FONTNAME",       (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE",       (0, 0), (-1, -1), 8),
+            ("BOX",            (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("INNERGRID",      (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F5F5F5")]),
+            ("VALIGN",         (0, 0), (-1, -1), "TOP"),
+            ("ALIGN",          (0, 0), (0, -1), "CENTER"),
+            ("TOPPADDING",     (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING",  (0, 0), (-1, -1), 5),
+        ])
+        marker_num = 1
+        for i, e in enumerate(errors):
+            if e.get("location_xy"):
+                sev_color = SEVERITY_COLORS.get(e.get("severity", ""), colors.gray)
+                lts.add("BACKGROUND", (1, marker_num), (1, marker_num), sev_color)
+                lts.add("TEXTCOLOR",  (1, marker_num), (1, marker_num), colors.white)
+                lts.add("FONTNAME",   (1, marker_num), (1, marker_num), "Helvetica-Bold")
+                marker_num += 1
+        legend_table.setStyle(lts)
+        story.append(legend_table)
 
     doc.build(story)
     print(f"  ✅ PDF saved: {output_path}")

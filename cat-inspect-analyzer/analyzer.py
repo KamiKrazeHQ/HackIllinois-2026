@@ -67,6 +67,7 @@ Carefully inspect the image and return ONLY valid JSON, no markdown, no explanat
       "severity": "Low | Medium | High | Critical",
       "description": "detailed description of the issue",
       "location": "where on the equipment",
+      "location_xy": [<x as decimal 0.0-1.0>, <y as decimal 0.0-1.0>],
       "recommended_action": "what to do about it",
       "urgency": "Monitor | Schedule Repair | Immediate Action Required"
     }}
@@ -76,7 +77,14 @@ Carefully inspect the image and return ONLY valid JSON, no markdown, no explanat
   "estimated_repair_priority": "Routine | Urgent | Emergency",
   "follow_up_recommended": true or false,
   "follow_up_notes": "any additional notes"
-}}"""
+}}
+
+IMPORTANT: For each error in errors_found, you MUST include "location_xy" as [x, y] decimal
+coordinates (0.0 to 1.0) representing where on the image the issue is located.
+x=0.0 is the left edge, x=1.0 is the right edge.
+y=0.0 is the top edge, y=1.0 is the bottom edge.
+Example: [0.25, 0.7] means 25% from left, 70% from top.
+Be as precise as possible — point directly at the defect."""
 
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -115,7 +123,7 @@ def analyze_image(image_path):
     print(f"  → Running Rekognition...")
     rekognition_result = run_rekognition(image_bytes)
 
-    print(f"  → Running Bedrock (Claude) analysis...")
+    print(f"  → Running Claude analysis...")
     analysis = run_bedrock_analysis(image_bytes, rekognition_result)
 
     return {
