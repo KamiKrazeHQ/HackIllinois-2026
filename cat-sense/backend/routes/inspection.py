@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from services.inspection_service import analyze_inspection
+from services.demo_service import is_demo, DEMO_INSPECTION
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/inspection", tags=["inspection"])
@@ -22,11 +23,15 @@ async def upload_inspection(file: UploadFile = File(...)):
     if len(contents) > _MAX_BYTES:
         raise HTTPException(status_code=400, detail="File exceeds 10 MB limit")
 
-    try:
-        results = analyze_inspection(contents, file.content_type)
-    except Exception as exc:
-        logger.error("Inspection analysis failed: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}")
+    if is_demo():
+        logger.info("DEMO_MODE: returning predefined inspection response")
+        results = list(DEMO_INSPECTION)
+    else:
+        try:
+            results = analyze_inspection(contents, file.content_type)
+        except Exception as exc:
+            logger.error("Inspection analysis failed: %s", exc)
+            raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}")
 
     urgent = [f for f in results if f.get("severity") == "Urgent"]
     monitor = [f for f in results if f.get("severity") == "Monitor"]

@@ -95,6 +95,45 @@ DEMO_RISK = {
     "risk_level": "High",
 }
 
+DEMO_INSPECTION = [
+    {
+        "fault": "Hydraulic Cylinder Seal Failure",
+        "description": "Active fluid leak detected at the rod seal of the hydraulic cylinder. Oil residue visible along the cylinder barrel indicating progressive seal degradation.",
+        "severity": "Urgent",
+        "component": "Hydraulic Cylinder",
+        "parts": [
+            {"part_number": "1P-0507", "name": "Hydraulic Cylinder Seal Kit", "price_usd": 189.00},
+        ],
+    },
+    {
+        "fault": "Engine Air Filter Restriction",
+        "description": "Air filter restriction indicator in yellow zone. Filter element shows heavy dust loading, reducing engine airflow by an estimated 15-20%.",
+        "severity": "Urgent",
+        "component": "Air Intake System",
+        "parts": [
+            {"part_number": "1R-0749", "name": "Engine Air Filter Element", "price_usd": 67.50},
+        ],
+    },
+    {
+        "fault": "Track Pad Wear — Left Side",
+        "description": "Left-side track pads measured at 18mm remaining (service limit 12mm). Recommend scheduling replacement within next 200 operating hours.",
+        "severity": "Monitor",
+        "component": "Undercarriage",
+        "parts": [
+            {"part_number": "9W-2451", "name": "Track Shoe Assembly", "price_usd": 1240.00},
+        ],
+    },
+    {
+        "fault": "Coolant Additive Depletion",
+        "description": "Coolant SCA (supplemental coolant additive) concentration below minimum threshold. Cavitation erosion risk to cylinder liners if not treated.",
+        "severity": "Monitor",
+        "component": "Cooling System",
+        "parts": [
+            {"part_number": "8T-5560", "name": "Cooling System Conditioner", "price_usd": 34.00},
+        ],
+    },
+]
+
 DEMO_DIAGNOSIS = {
     "diagnosis_summary": (
         "Hydraulic pump shows a Moderate crack on the housing combined with "
