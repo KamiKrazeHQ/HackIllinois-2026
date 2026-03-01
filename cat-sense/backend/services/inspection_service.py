@@ -17,6 +17,16 @@ _DB_PATH = Path(__file__).parent.parent / "parts_db.json"
 with open(_DB_PATH) as _f:
     _PARTS_DB = json.load(_f)
 
+_FALLBACK_FAULTS = [
+    {
+        "fault": "AI analysis unavailable",
+        "description": "All AI providers are currently unavailable (quota exceeded or no credits). Please retry later or switch to Demo Mode in your .env file.",
+        "severity": "Monitor",
+        "component": "System",
+        "parts": [],
+    }
+]
+
 _PROMPT = """
 You are a Caterpillar heavy equipment inspection analyst.
 Analyze this inspection document and extract all mechanical faults or issues.
@@ -126,12 +136,44 @@ def _run_claude_inspection(file_bytes: bytes, mime_type: str) -> list[dict]:
     return _parse_faults(response.content[0].text)
 
 
+def _run_openai_inspection(file_bytes: bytes, mime_type: str) -> list[dict]:
+    import base64
+    from openai import OpenAI
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+    if mime_type == "application/pdf":
+        raise ValueError("OpenAI vision does not support PDF directly")
+
+    client = OpenAI(api_key=api_key)
+    encoded = base64.standard_b64encode(file_bytes).decode("utf-8")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{encoded}"}},
+            {"type": "text", "text": _PROMPT},
+        ]}],
+    )
+    logger.info("Inspection analysis completed via OpenAI fallback")
+    return _parse_faults(response.choices[0].message.content)
+
+
 def analyze_inspection(file_bytes: bytes, mime_type: str) -> list[dict]:
     try:
         faults = _run_gemini_inspection(file_bytes, mime_type)
     except Exception as exc:
         logger.warning("All Gemini inspection models failed (%s) — trying Claude", exc)
-        faults = _run_claude_inspection(file_bytes, mime_type)
+        try:
+            faults = _run_claude_inspection(file_bytes, mime_type)
+        except Exception as claude_exc:
+            logger.warning("Claude inspection failed (%s) — trying OpenAI", claude_exc)
+            try:
+                faults = _run_openai_inspection(file_bytes, mime_type)
+            except Exception as openai_exc:
+                logger.error("OpenAI inspection also failed (%s) — returning fallback", openai_exc)
+                return list(_FALLBACK_FAULTS)
 
     augmented = []
     for fault in faults:
