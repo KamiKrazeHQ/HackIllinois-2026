@@ -95,9 +95,16 @@ export async function getMachine(id: string) {
   return handleResponse(res)
 }
 
-export async function scanInspection(machineId: string, file: File) {
+export async function scanInspection(
+  machineId: string,
+  file: File,
+  machineDescription = "CAT Equipment",
+  machinePin = "",
+) {
   const form = new FormData()
   form.append("file", file)
+  form.append("machine_description", machineDescription)
+  form.append("machine_pin", machinePin)
   const res = await fetch(`${BASE_URL}/garage/${machineId}/inspection/scan`, {
     method: "POST",
     body: form,

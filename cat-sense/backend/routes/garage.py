@@ -318,16 +318,32 @@ def get_machine(machine_id: str):
 
 
 @router.post("/{machine_id}/inspection/scan", response_model=InspectionRecord)
-async def scan_inspection(machine_id: str, file: UploadFile = File(...)):
-    m = machines.get(machine_id)
-    if not m:
-        raise HTTPException(status_code=404, detail="Machine not found.")
+async def scan_inspection(
+    machine_id: str,
+    file: UploadFile = File(...),
+    machine_description: str = "CAT Equipment",
+    machine_pin: str = "",
+):
+    # Use in-memory machine if available; otherwise build a minimal stub from
+    # the form fields so the scan works on any fresh backend instance.
+    m = machines.get(machine_id) or Machine(
+        id=machine_id,
+        nickname=machine_description,
+        pin=machine_pin,
+        model_family="Heavy Equipment",
+        model_code=machine_pin[3:8] if len(machine_pin) >= 8 else "Unknown",
+        serial_number=machine_pin[8:] if len(machine_pin) > 8 else "",
+        year=None,
+        description=machine_description,
+        added_at="",
+    )
 
     contents = await file.read()
     mime = file.content_type or "image/jpeg"
     record = await _scan_with_gemini(contents, mime, m)
     record.filename = file.filename or "inspection_upload"
-    m.inspections.append(record)
+    if machine_id in machines:
+        machines[machine_id].inspections.append(record)
     return record
 
 

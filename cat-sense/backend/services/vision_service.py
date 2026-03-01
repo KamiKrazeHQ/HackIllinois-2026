@@ -1,16 +1,14 @@
 """
-Vision analysis: AWS Rekognition (label detection) + Anthropic Claude (deep analysis).
-Falls back to Claude-only if AWS credentials are not configured.
+Vision analysis: AWS Rekognition (label detection) + Gemini (deep analysis).
+Falls back to Gemini-only if AWS credentials are not configured.
 """
 
 from __future__ import annotations
 
-import base64
+import io
 import json
 import logging
 import os
-
-import anthropic
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +64,7 @@ def _run_rekognition(image_bytes: bytes) -> dict:
     return {"all_labels": all_labels, "damage_labels": damage_labels}
 
 
-# ── Anthropic Claude ──────────────────────────────────────────────────────────
+# ── Google Gemini ─────────────────────────────────────────────────────────────
 
 _PROMPT_WITH_REKOG = """\
 You are an expert CAT heavy equipment inspector with 20+ years of experience.
@@ -125,13 +123,16 @@ Inspect this image and return ONLY valid JSON — no markdown, no explanation:
 }"""
 
 
-def _run_claude(image_bytes: bytes, rekognition_result: dict | None, mime_type: str = "image/jpeg") -> dict:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not set")
+def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: str = "image/jpeg") -> dict:
+    from google import genai
+    from google.genai import types
+    import PIL.Image
 
-    safe_mime = mime_type if mime_type in ("image/jpeg", "image/png", "image/gif", "image/webp") else "image/jpeg"
-    image_b64 = base64.standard_b64encode(image_bytes).decode()
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not set")
+
+    client = genai.Client(api_key=api_key)
 
     if rekognition_result:
         prompt_text = _PROMPT_WITH_REKOG.format(
@@ -141,20 +142,13 @@ def _run_claude(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
     else:
         prompt_text = _PROMPT_DIRECT
 
-    client = anthropic.Anthropic(api_key=api_key)
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        messages=[{
-            "role": "user",
-            "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": safe_mime, "data": image_b64}},
-                {"type": "text", "text": prompt_text},
-            ],
-        }],
+    img = PIL.Image.open(io.BytesIO(image_bytes))
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[prompt_text, img],
     )
 
-    raw = response.content[0].text.strip()
+    raw = response.text.strip()
     raw = raw.replace("```json", "").replace("```", "").strip()
     return json.loads(raw)
 
@@ -163,7 +157,7 @@ def _run_claude(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
 
 def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     """
-    Run Rekognition (if AWS credentials present) then Claude deep analysis.
+    Run Rekognition (if AWS credentials present) then Gemini deep analysis.
     Returns a dict with both legacy VisionResponse fields and rich new fields.
     """
     rekognition_result = None
@@ -181,13 +175,13 @@ def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
                 len(all_labels), len(damage_labels),
             )
         except Exception as exc:
-            logger.warning("Rekognition failed (%s) — using Claude-only analysis", exc)
+            logger.warning("Rekognition failed (%s) — using Gemini-only analysis", exc)
 
-    # Claude analysis
+    # Gemini analysis
     try:
-        analysis = _run_claude(image_bytes, rekognition_result, mime_type)
+        analysis = _run_gemini(image_bytes, rekognition_result, mime_type)
     except Exception as exc:
-        logger.error("Claude vision failed: %s", exc)
+        logger.error("Gemini vision failed: %s", exc)
         return {**_FALLBACK}
 
     condition = analysis.get("overall_condition", "Fair")

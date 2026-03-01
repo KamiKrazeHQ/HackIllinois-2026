@@ -70,7 +70,7 @@ function MachineDetail({ machine, onBack, onUpdated }: {
     setScanning(true)
     setScanError(null)
     try {
-      const record: InspectionRecord = await scanInspectionAPI(machine.id, file)
+      const record: InspectionRecord = await scanInspectionAPI(machine.id, file, machine.description, machine.pin)
       record.filename = file.name
 
       // Update UI immediately
