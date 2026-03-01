@@ -28,6 +28,13 @@ class ErrorFound(BaseModel):
     urgency: str = "Monitor"     # Monitor | Schedule Repair | Immediate Action Required
 
 
+class BBoxIssue(BaseModel):
+    label: str = ""
+    severity: str = "LOW"        # LOW | MEDIUM | HIGH
+    description: str = ""
+    bbox: dict = {}              # { x, y, width, height } in original image pixels
+
+
 class VisionResponse(BaseModel):
     # Legacy fields (kept for backward compatibility)
     description: str
@@ -44,6 +51,7 @@ class VisionResponse(BaseModel):
     follow_up_notes: str = ""
     rekognition_labels: list[dict] = []
     damage_indicators: list[dict] = []
+    issues: list[BBoxIssue] = []            # Bounding box overlay issues
 
 
 # ── Audio ─────────────────────────────────────────────────────────────────────

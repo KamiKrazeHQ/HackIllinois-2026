@@ -39,6 +39,7 @@ _FALLBACK = {
     "follow_up_notes": "",
     "rekognition_labels": [],
     "damage_indicators": [],
+    "issues": [],
 }
 
 
@@ -94,8 +95,19 @@ Inspect the image and return ONLY valid JSON — no markdown, no explanation:
   "inspection_summary": "1-2 sentence summary for a work order",
   "estimated_repair_priority": "Routine | Urgent | Emergency",
   "follow_up_recommended": true,
-  "follow_up_notes": "additional notes"
-}}"""
+  "follow_up_notes": "additional notes",
+  "issues": [
+    {{
+      "label": "3-5 word label for the visible defect",
+      "severity": "LOW | MEDIUM | HIGH",
+      "description": "one sentence description of the visible defect",
+      "bbox": {{ "x": <pixel x from left edge>, "y": <pixel y from top edge>, "width": <width in pixels>, "height": <height in pixels> }}
+    }}
+  ]
+}}
+
+For "issues": include one entry per visually identifiable defect with an estimated bounding box in the original image pixel space. Map severity: minor/wear -> LOW, moderate damage -> MEDIUM, severe/critical -> HIGH. If no visible defects, set issues to [].
+"""
 
 _PROMPT_DIRECT = """\
 You are an expert CAT heavy equipment inspector with 20+ years of experience.
@@ -119,8 +131,19 @@ Inspect this image and return ONLY valid JSON — no markdown, no explanation:
   "inspection_summary": "1-2 sentence summary for a work order",
   "estimated_repair_priority": "Routine | Urgent | Emergency",
   "follow_up_recommended": true,
-  "follow_up_notes": "additional notes"
-}"""
+  "follow_up_notes": "additional notes",
+  "issues": [
+    {
+      "label": "3-5 word label for the visible defect",
+      "severity": "LOW | MEDIUM | HIGH",
+      "description": "one sentence description of the visible defect",
+      "bbox": { "x": <pixel x from left edge>, "y": <pixel y from top edge>, "width": <width in pixels>, "height": <height in pixels> }
+    }
+  ]
+}
+
+For "issues": include one entry per visually identifiable defect with an estimated bounding box in the original image pixel space. Map severity: minor/wear -> LOW, moderate damage -> MEDIUM, severe/critical -> HIGH. If no visible defects, set issues to [].
+"""
 
 
 def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: str = "image/jpeg") -> dict:
@@ -207,4 +230,5 @@ def analyze_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         "follow_up_notes": analysis.get("follow_up_notes", ""),
         "rekognition_labels": all_labels,
         "damage_indicators": damage_labels,
+        "issues": analysis.get("issues", []),
     }

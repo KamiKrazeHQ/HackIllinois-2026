@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { uploadImage, translateTexts } from '../api'
 import { useT } from '../i18n/TranslationContext'
+import ImageInspectionOverlay, { BBoxIssue } from './ImageInspectionOverlay'
 
 interface ErrorFound {
   error_id: string
@@ -27,6 +28,7 @@ interface RichVisionResult {
   follow_up_notes: string
   rekognition_labels: { name: string; confidence: number }[]
   damage_indicators: { name: string; confidence: number }[]
+  issues: BBoxIssue[]
 }
 
 interface Props {
@@ -152,7 +154,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
         detected_issues: [], severity: 'Minor', overall_condition: 'Fair', overall_score: 5,
         errors_found: [], positive_observations: [], inspection_summary: 'Upload failed — check backend.',
         estimated_repair_priority: 'Routine', follow_up_recommended: false, follow_up_notes: '',
-        rekognition_labels: [], damage_indicators: [],
+        rekognition_labels: [], damage_indicators: [], issues: [],
       }
       setRawResult(fallback)
     } finally {
@@ -189,7 +191,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
         <input ref={inputRef} type="file" accept="image/*" hidden
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
         {preview ? (
-          <img src={preview} alt="preview" className="mx-auto max-h-48 object-contain" />
+          <img src={preview} alt="preview" className="mx-auto max-h-48 object-contain opacity-80" />
         ) : (
           <>
             <div className="text-4xl mb-3">📷</div>
@@ -210,6 +212,14 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
 
       {result && !loading && (
         <div className="space-y-3 animate-fade-slide-in">
+          {/* Bounding box overlay */}
+          {preview && (
+            <ImageInspectionOverlay
+              imageUrl={preview}
+              issues={(rawResult?.issues ?? []) as BBoxIssue[]}
+            />
+          )}
+
           {/* Summary card */}
           <div className={`bg-cat-black border-l-4 ${condBorder} p-4`}>
             <div className="flex items-center gap-4">
