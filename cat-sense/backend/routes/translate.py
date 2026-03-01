@@ -49,14 +49,10 @@ async def translate(req: TranslateRequest):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=[prompt],
         )
-        # response.text may include thinking preamble — extract the JSON array robustly
-        raw = ""
-        for part in response.candidates[0].content.parts:
-            if hasattr(part, 'text') and part.text:
-                raw += part.text
+        raw = response.text or ""
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if not match:
             raise ValueError(f"No JSON array found in response: {raw[:200]}")
