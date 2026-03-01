@@ -144,7 +144,7 @@ def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
 
     img = PIL.Image.open(io.BytesIO(image_bytes))
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=[prompt_text, img],
     )
 

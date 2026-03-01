@@ -53,7 +53,7 @@ def _call_gemini_vision(image_bytes: bytes) -> dict:
     client = _get_client()
     image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=[_PROMPT, image_part],
     )
     text = response.text.strip()
