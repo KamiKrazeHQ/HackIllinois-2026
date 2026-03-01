@@ -19,11 +19,17 @@ interface VisionResult { description: string; detected_issues: string[]; severit
 interface AudioResult { dominant_frequency_hz: number; anomaly_detected: boolean; anomaly_type: string; severity: string }
 interface RiskResult { failure_probability_14_days: number; estimated_downtime_cost_usd: number; recommended_action_window: string; risk_level: string }
 
+interface DisplayDiagnosis {
+  probable_causes?: string[]
+  recommended_action?: string
+}
+
 interface Message {
   role: 'user' | 'assistant'
   content: string
   displayContent?: string
   diagnosis?: Diagnosis
+  displayDiagnosis?: DisplayDiagnosis
   timestamp: string
 }
 interface Props {
@@ -110,21 +116,49 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
   useEffect(() => {
     const current = messagesRef.current
     if (lang === 'en') {
-      if (current.some(m => m.displayContent)) {
-        setMessages(prev => prev.map(m => ({ ...m, displayContent: undefined })))
+      if (current.some(m => m.displayContent || m.displayDiagnosis)) {
+        setMessages(prev => prev.map(m => ({ ...m, displayContent: undefined, displayDiagnosis: undefined })))
       }
       return
     }
-    const texts = current.filter(m => m.role === 'assistant').map(m => m.content)
+    type Seg = { msgIdx: number; field: 'reply' | 'cause' | 'action'; causeIdx?: number }
+    const texts: string[] = []
+    const segs: Seg[] = []
+    current.forEach((m, msgIdx) => {
+      if (m.role !== 'assistant') return
+      texts.push(m.content)
+      segs.push({ msgIdx, field: 'reply' })
+      m.diagnosis?.probable_causes?.forEach((c, causeIdx) => {
+        texts.push(c)
+        segs.push({ msgIdx, field: 'cause', causeIdx })
+      })
+      if (m.diagnosis?.recommended_action) {
+        texts.push(m.diagnosis.recommended_action)
+        segs.push({ msgIdx, field: 'action' })
+      }
+    })
     if (texts.length === 0) return
     translateTexts(texts, lang)
       .then((data: { translations: string[] }) => {
-        let idx = 0
-        setMessages(prev => prev.map(m =>
-          m.role === 'assistant'
-            ? { ...m, displayContent: data.translations[idx++] }
-            : m
-        ))
+        const displayContents: Record<number, string> = {}
+        const displayDiagnoses: Record<number, DisplayDiagnosis> = {}
+        segs.forEach(({ msgIdx, field, causeIdx }, i) => {
+          const translated = data.translations[i]
+          if (field === 'reply') {
+            displayContents[msgIdx] = translated
+          } else if (field === 'cause' && causeIdx !== undefined) {
+            if (!displayDiagnoses[msgIdx]) displayDiagnoses[msgIdx] = { probable_causes: [] }
+            displayDiagnoses[msgIdx].probable_causes![causeIdx] = translated
+          } else if (field === 'action') {
+            if (!displayDiagnoses[msgIdx]) displayDiagnoses[msgIdx] = {}
+            displayDiagnoses[msgIdx].recommended_action = translated
+          }
+        })
+        setMessages(prev => prev.map((m, idx) => ({
+          ...m,
+          displayContent: displayContents[idx] ?? m.displayContent,
+          displayDiagnosis: displayDiagnoses[idx] ?? m.displayDiagnosis,
+        })))
       })
       .catch(console.error)
   }, [lang])
@@ -148,13 +182,27 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
         { role: 'assistant', content: reply, diagnosis, timestamp: now() },
       ])
       if (lang !== 'en') {
-        translateTexts([reply], lang)
+        const causes = diagnosis?.probable_causes ?? []
+        const action = diagnosis?.recommended_action ?? ''
+        const batch = [reply, ...causes, ...(action ? [action] : [])]
+        translateTexts(batch, lang)
           .then((res: { translations: string[] }) => {
+            const translatedReply = res.translations[0]
+            let tIdx = 1
+            const translatedCauses = causes.map(() => res.translations[tIdx++])
+            const translatedAction = action ? res.translations[tIdx] : undefined
             setMessages(prev => {
               const updated = [...prev]
               const last = updated.length - 1
               if (updated[last]?.content === reply && updated[last].role === 'assistant') {
-                updated[last] = { ...updated[last], displayContent: res.translations[0] }
+                updated[last] = {
+                  ...updated[last],
+                  displayContent: translatedReply,
+                  displayDiagnosis: {
+                    probable_causes: translatedCauses.length ? translatedCauses : undefined,
+                    recommended_action: translatedAction,
+                  },
+                }
               }
               return updated
             })
@@ -216,6 +264,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
             role={m.role}
             content={m.displayContent ?? m.content}
             diagnosis={m.diagnosis}
+            displayDiagnosis={m.displayDiagnosis}
             timestamp={m.timestamp}
             isLast={i === messages.length - 1}
           />

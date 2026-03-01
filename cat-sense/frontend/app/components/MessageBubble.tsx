@@ -1,3 +1,5 @@
+import { useT } from '../i18n/TranslationContext'
+
 interface Diagnosis {
   diagnosis_summary: string
   probable_causes: string[]
@@ -7,10 +9,16 @@ interface Diagnosis {
   recommended_action: string
 }
 
+interface DisplayDiagnosis {
+  probable_causes?: string[]
+  recommended_action?: string
+}
+
 interface Props {
   role: 'user' | 'assistant'
   content: string
   diagnosis?: Diagnosis
+  displayDiagnosis?: DisplayDiagnosis
   timestamp?: string
   isLast?: boolean
 }
@@ -29,9 +37,13 @@ function CatAvatar() {
   )
 }
 
-export default function MessageBubble({ role, content, diagnosis, timestamp, isLast }: Props) {
+export default function MessageBubble({ role, content, diagnosis, displayDiagnosis, timestamp, isLast }: Props) {
+  const { t } = useT()
   const isUser = role === 'user'
   const sev = diagnosis?.severity ? SEV_STYLE[diagnosis.severity] ?? SEV_STYLE.Minor : null
+
+  const causes = displayDiagnosis?.probable_causes ?? diagnosis?.probable_causes
+  const action = displayDiagnosis?.recommended_action ?? diagnosis?.recommended_action
 
   return (
     <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 items-end animate-fade-slide-in`}>
@@ -78,13 +90,13 @@ export default function MessageBubble({ role, content, diagnosis, timestamp, isL
               </div>
 
               {/* Probable causes */}
-              {diagnosis.probable_causes?.length > 0 && (
+              {causes && causes.length > 0 && (
                 <div>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-medium">
-                    Probable Causes
+                    {t('probableCauses')}
                   </p>
                   <ul className="space-y-1">
-                    {diagnosis.probable_causes.map((c, i) => (
+                    {causes.map((c, i) => (
                       <li key={i} className="text-gray-300 flex gap-2 leading-snug">
                         <span className="text-[#FFC200] mt-px">›</span>
                         <span>{c}</span>
@@ -95,12 +107,14 @@ export default function MessageBubble({ role, content, diagnosis, timestamp, isL
               )}
 
               {/* Action */}
-              <div className="border-t border-gray-800 pt-2.5">
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-medium">
-                  Recommended Action
-                </p>
-                <p className="text-gray-200 leading-snug">{diagnosis.recommended_action}</p>
-              </div>
+              {action && (
+                <div className="border-t border-gray-800 pt-2.5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5 font-medium">
+                    {t('recommendedAction')}
+                  </p>
+                  <p className="text-gray-200 leading-snug">{action}</p>
+                </div>
+              )}
             </div>
           </div>
         )}

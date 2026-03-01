@@ -61,6 +61,10 @@ export const SOURCE: Record<string, string> = {
   estDowntimeCost: 'Est. Downtime Cost',
   actionWindow: 'Action Window',
 
+  // ── Diagnosis card (MessageBubble) ───────────────────────────────────────────
+  probableCauses: 'Probable Causes',
+  recommendedAction: 'Recommended Action',
+
   // ── Report ───────────────────────────────────────────────────────────────────
   noDiagnostics: 'Run diagnostics to generate a report.',
   diagnosticReport: 'Diagnostic Report',
