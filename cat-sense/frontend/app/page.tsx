@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
+import { app } from './firebase'
+import Login from './components/Login'
 import ChatWindow from './components/ChatWindow'
 import ImageUpload from './components/ImageUpload'
 import AudioRecorder from './components/AudioRecorder'
@@ -33,14 +36,29 @@ const TAB_ICONS: Record<Tab, string> = {
 
 export default function Home() {
   const [sessionId, setSessionId] = useState('session-default')
+  const [user, setUser] = useState<{ email: string | null } | null | undefined>(undefined)
+
   useEffect(() => {
     setSessionId('session-' + Math.random().toString(36).slice(2, 9))
   }, [])
+
+  useEffect(() => {
+    const auth = getAuth(app)
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u ? { email: u.email } : null))
+    return unsub
+  }, [])
+
   const [tab, setTab] = useState<Tab>('Chat')
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null)
   const [vision, setVision] = useState<VisionResult | null>(null)
   const [audio, setAudio] = useState<AudioResult | null>(null)
   const [risk, setRisk] = useState<RiskResult | null>(null)
+
+  // Still loading auth state
+  if (user === undefined) return null
+
+  // Not logged in
+  if (user === null) return <Login />
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto relative">
@@ -84,7 +102,13 @@ export default function Home() {
               )}
             </div>
           )}
-          <span className="text-[10px] text-gray-700 font-mono tabular-nums">{sessionId}</span>
+          <span className="text-[10px] text-gray-700 font-mono tabular-nums hidden sm:block">{sessionId}</span>
+          <button
+            onClick={() => signOut(getAuth(app))}
+            className="text-[10px] text-gray-600 hover:text-gray-300 border border-gray-800 hover:border-gray-600 rounded-lg px-2 py-1 transition-colors"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 

@@ -1,6 +1,12 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { addMachine, listMachines, scanInspection, removeMachine } from '../api'
+import { getAuth } from 'firebase/auth'
+import {
+  collection, doc, setDoc, deleteDoc, updateDoc,
+  arrayUnion, query, orderBy, onSnapshot,
+} from 'firebase/firestore'
+import { app, db } from '../firebase'
+import { addMachine as addMachineAPI, scanInspection as scanInspectionAPI } from '../api'
 
 interface InspectionRecord {
   id: string
@@ -35,9 +41,25 @@ function fmt(iso: string) {
   catch { return iso }
 }
 
+function uid() {
+  return getAuth(app).currentUser?.uid ?? 'anonymous'
+}
+
+function machineDoc(machineId: string) {
+  return doc(db, 'users', uid(), 'machines', machineId)
+}
+
+function machinesCol() {
+  return collection(db, 'users', uid(), 'machines')
+}
+
 // ── Machine Detail ─────────────────────────────────────────────────────────────
 
-function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBack: () => void; onUpdated: (m: Machine) => void }) {
+function MachineDetail({ machine, onBack, onUpdated }: {
+  machine: Machine
+  onBack: () => void
+  onUpdated: (m: Machine) => void
+}) {
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -48,8 +70,17 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
     setScanning(true)
     setScanError(null)
     try {
-      const record = await scanInspection(machine.id, file)
-      onUpdated({ ...machine, inspections: [...machine.inspections, record] })
+      const record: InspectionRecord = await scanInspectionAPI(machine.id, file)
+      record.filename = file.name
+
+      // Update UI immediately
+      const updated = { ...machine, inspections: [...machine.inspections, record] }
+      onUpdated(updated)
+
+      // Persist to Firestore in background — don't block the UI
+      updateDoc(machineDoc(machine.id), {
+        inspections: arrayUnion(record),
+      }).catch(err => console.warn('[Scan] Firestore sync failed:', err))
     } catch (err: unknown) {
       setScanError(err instanceof Error ? err.message : 'Scan failed.')
     } finally {
@@ -63,15 +94,11 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
 
   return (
     <div className="space-y-4">
-      {/* Back */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#FFC200] transition-colors"
-      >
+      <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#FFC200] transition-colors">
         ← Back to Garage
       </button>
 
-      {/* Machine header card */}
+      {/* Machine info card */}
       <div className="bg-gray-900 border border-gray-700/50 rounded-2xl p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -80,42 +107,19 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
           </div>
           <span className="text-2xl">🏗</span>
         </div>
-
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-          <div>
-            <span className="text-gray-500">PIN</span>
-            <p className="text-gray-200 font-mono">{machine.pin}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Model</span>
-            <p className="text-gray-200">{machine.model_code}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Family</span>
-            <p className="text-gray-200">{machine.model_family}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Serial</span>
-            <p className="text-gray-200 font-mono">{machine.serial_number || '—'}</p>
-          </div>
-          {machine.year && (
-            <div>
-              <span className="text-gray-500">Year</span>
-              <p className="text-gray-200">{machine.year}</p>
-            </div>
-          )}
-          <div>
-            <span className="text-gray-500">Added</span>
-            <p className="text-gray-200">{fmt(machine.added_at)}</p>
-          </div>
+          <div><span className="text-gray-500">PIN</span><p className="text-gray-200 font-mono">{machine.pin}</p></div>
+          <div><span className="text-gray-500">Model</span><p className="text-gray-200">{machine.model_code}</p></div>
+          <div><span className="text-gray-500">Family</span><p className="text-gray-200">{machine.model_family}</p></div>
+          <div><span className="text-gray-500">Serial</span><p className="text-gray-200 font-mono">{machine.serial_number || '—'}</p></div>
+          {machine.year && <div><span className="text-gray-500">Year</span><p className="text-gray-200">{machine.year}</p></div>}
+          <div><span className="text-gray-500">Added</span><p className="text-gray-200">{fmt(machine.added_at)}</p></div>
         </div>
-
         {condStyle && (
           <div className="flex items-center gap-2 pt-1">
             <span className="text-[10px] text-gray-500">Latest condition</span>
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold ${condStyle.badge}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${condStyle.dot}`} />
-              {latestCondition}
+              <span className={`w-1.5 h-1.5 rounded-full ${condStyle.dot}`} />{latestCondition}
             </span>
           </div>
         )}
@@ -124,26 +128,16 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
       {/* Upload inspection */}
       <div className="bg-gray-900 border border-[#FFC200]/20 rounded-2xl p-4">
         <p className="text-xs font-semibold text-[#FFC200] mb-2">📋 Upload Inspection Document</p>
-        <p className="text-[11px] text-gray-500 mb-3">Upload a photo or PDF of your inspection sheet — Gemini will extract issues automatically.</p>
-
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,application/pdf"
-          className="hidden"
-          onChange={handleScan}
-        />
+        <p className="text-[11px] text-gray-500 mb-3">Upload a photo or PDF — results are saved to your account.</p>
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleScan} />
         <button
           onClick={() => fileRef.current?.click()}
           disabled={scanning}
           className="w-full py-2 rounded-xl border border-dashed border-[#FFC200]/40 text-xs text-[#FFC200] hover:bg-[#FFC200]/5 disabled:opacity-40 transition-colors"
         >
-          {scanning ? 'Scanning with Gemini…' : '+ Choose file to scan'}
+          {scanning ? 'Scanning…' : '+ Choose file to scan'}
         </button>
-
-        {scanError && (
-          <p className="mt-2 text-xs text-red-400">{scanError}</p>
-        )}
+        {scanError && <p className="mt-2 text-xs text-red-400">{scanError}</p>}
       </div>
 
       {/* Inspection history */}
@@ -159,8 +153,7 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-gray-300 font-medium truncate">{rec.filename}</span>
                   <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold ${cs.badge}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${cs.dot}`} />
-                    {rec.overall_condition}
+                    <span className={`w-1.5 h-1.5 rounded-full ${cs.dot}`} />{rec.overall_condition}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 leading-snug">{rec.summary}</p>
@@ -168,8 +161,7 @@ function MachineDetail({ machine, onBack, onUpdated }: { machine: Machine; onBac
                   <ul className="space-y-0.5">
                     {rec.issues_found.map((issue, i) => (
                       <li key={i} className="text-xs text-gray-300 flex gap-2">
-                        <span className="text-[#FFC200]">›</span>
-                        <span>{issue}</span>
+                        <span className="text-[#FFC200]">›</span><span>{issue}</span>
                       </li>
                     ))}
                   </ul>
@@ -198,10 +190,29 @@ export default function GarageView() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    listMachines()
-      .then(setMachines)
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    const col = machinesCol()
+    const q = query(col, orderBy('added_at', 'asc'))
+    const unsub = onSnapshot(q, (snap) => {
+      const list: Machine[] = snap.docs.map(d => {
+        const data = d.data()
+        return {
+          id: d.id,
+          ...data,
+          inspections: (data.inspections ?? []) as InspectionRecord[],
+        } as Machine
+      })
+      setMachines(list)
+      if (selected) {
+        const updated = list.find(m => m.id === selected.id)
+        if (updated) setSelected(updated)
+      }
+      setLoading(false)
+    }, (err) => {
+      console.error('[Garage] snapshot error:', err.code, err.message)
+      setLoading(false)
+    })
+    return unsub
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleAdd(e: React.FormEvent) {
@@ -210,8 +221,18 @@ export default function GarageView() {
     setAdding(true)
     setAddError(null)
     try {
-      const m = await addMachine(nickname.trim(), pin.trim())
-      setMachines(prev => [...prev, m])
+      const m = await addMachineAPI(nickname.trim(), pin.trim())
+      await setDoc(machineDoc(m.id), {
+        nickname: m.nickname,
+        pin: m.pin,
+        model_family: m.model_family,
+        model_code: m.model_code,
+        serial_number: m.serial_number,
+        year: m.year ?? null,
+        description: m.description,
+        added_at: m.added_at,
+        inspections: [],
+      })
       setNickname('')
       setPin('')
     } catch (err: unknown) {
@@ -222,8 +243,7 @@ export default function GarageView() {
   }
 
   async function handleRemove(id: string) {
-    await removeMachine(id).catch(() => {})
-    setMachines(prev => prev.filter(m => m.id !== id))
+    await deleteDoc(machineDoc(id))
     if (selected?.id === id) setSelected(null)
   }
 
@@ -233,13 +253,7 @@ export default function GarageView() {
   }
 
   if (selected) {
-    return (
-      <MachineDetail
-        machine={selected}
-        onBack={() => setSelected(null)}
-        onUpdated={handleUpdated}
-      />
-    )
+    return <MachineDetail machine={selected} onBack={() => setSelected(null)} onUpdated={handleUpdated} />
   }
 
   return (
@@ -296,9 +310,7 @@ export default function GarageView() {
                 className="bg-gray-900 border border-gray-700/40 rounded-2xl p-3.5 flex items-center gap-3 hover:border-[#FFC200]/30 transition-colors cursor-pointer group"
                 onClick={() => setSelected(m)}
               >
-                <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl flex-shrink-0">
-                  🏗
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl flex-shrink-0">🏗</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-100 leading-tight truncate">{m.nickname}</p>
                   <p className="text-[11px] text-gray-500 truncate">{m.model_family} · {m.model_code}</p>
@@ -307,8 +319,7 @@ export default function GarageView() {
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                   {cs && (
                     <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${cs.badge}`}>
-                      <span className={`w-1 h-1 rounded-full ${cs.dot}`} />
-                      {latest!.overall_condition}
+                      <span className={`w-1 h-1 rounded-full ${cs.dot}`} />{latest!.overall_condition}
                     </span>
                   )}
                   <div className="flex items-center gap-1">
@@ -319,9 +330,7 @@ export default function GarageView() {
                       onClick={e => { e.stopPropagation(); handleRemove(m.id) }}
                       className="text-gray-700 hover:text-red-400 text-sm leading-none transition-colors ml-1"
                       aria-label="Remove machine"
-                    >
-                      ✕
-                    </button>
+                    >✕</button>
                   </div>
                 </div>
               </div>

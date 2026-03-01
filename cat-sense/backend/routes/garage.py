@@ -184,14 +184,23 @@ def _local_pdf_parse(file_bytes: bytes, mime_type: str) -> tuple[str, list[str],
 
 async def _scan_with_gemini(file_bytes: bytes, mime_type: str, machine: Machine) -> InspectionRecord:
     import json, base64
-    from datetime import datetime
+    from datetime import datetime, timezone
     import anthropic
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not configured")
+        logger.warning("ANTHROPIC_API_KEY not set, using local extraction")
+        summary, issues, condition = _local_pdf_parse(file_bytes, mime_type or "application/pdf")
+        return InspectionRecord(
+            id=uuid.uuid4().hex[:8],
+            filename="inspection_upload",
+            summary=summary,
+            issues_found=issues,
+            overall_condition=condition,
+            scanned_at=datetime.now(timezone.utc).isoformat(),
+        )
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.AsyncAnthropic(api_key=api_key, timeout=45.0)
 
     system_prompt = (
         "You are a CAT heavy equipment inspection analyst. "
@@ -225,7 +234,7 @@ async def _scan_with_gemini(file_bytes: bytes, mime_type: str, machine: Machine)
         }
 
     try:
-        response = client.messages.create(
+        response = await client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
             system=system_prompt,
