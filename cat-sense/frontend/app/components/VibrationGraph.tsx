@@ -37,6 +37,10 @@ export default function VibrationGraph({ frequencyHz, anomalyType, severity }: P
     i === activeBand ? 0.88 : 0.08 + ((i * 7 + 3) % 11) * 0.015
   )
 
+  // X position of the exact frequency marker (interpolated across the full width)
+  const maxFreq = 1000
+  const markerX = (frequencyHz / maxFreq) * W
+
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
       <div className="flex items-center justify-between mb-2">
@@ -44,7 +48,15 @@ export default function VibrationGraph({ frequencyHz, anomalyType, severity }: P
         <span className="text-xs text-gray-400 font-mono">{frequencyHz.toFixed(1)} Hz</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H + 32}`} className="w-full">
+        <defs>
+          <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
         <line x1={0} y1={H} x2={W} y2={H} stroke="#374151" strokeWidth={1} />
+
         {BANDS.map((band, i) => {
           const x = gap + i * (barW + gap)
           const amp = amplitudes[i]
@@ -54,7 +66,10 @@ export default function VibrationGraph({ frequencyHz, anomalyType, severity }: P
           return (
             <g key={i}>
               <rect x={x} y={y} width={barW} height={barH} rx={3}
-                fill={active ? activeColor : '#374151'} opacity={active ? 1 : 0.7} />
+                fill={active ? activeColor : '#374151'}
+                opacity={active ? 1 : 0.7}
+                filter={active ? 'url(#glow)' : undefined}
+              />
               <text x={x + barW / 2} y={H + 12} textAnchor="middle" fontSize={7}
                 fill={active ? activeColor : '#6b7280'}>{band.name}</text>
               <text x={x + barW / 2} y={H + 22} textAnchor="middle" fontSize={6}
@@ -62,6 +77,14 @@ export default function VibrationGraph({ frequencyHz, anomalyType, severity }: P
             </g>
           )
         })}
+
+        {/* Exact frequency marker */}
+        <line x1={markerX} y1={0} x2={markerX} y2={H}
+          stroke={activeColor} strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+        <polygon
+          points={`${markerX - 4},0 ${markerX + 4},0 ${markerX},6`}
+          fill={activeColor} opacity={0.9}
+        />
       </svg>
       <p className="text-xs text-center text-gray-500 mt-1 capitalize">
         {anomalyType !== 'none' ? `Detected: ${anomalyType}` : 'No anomaly detected'}

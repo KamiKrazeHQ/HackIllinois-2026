@@ -34,17 +34,17 @@ export default function MessageBubble({ role, content, diagnosis, timestamp, isL
   const sev = diagnosis?.severity ? SEV_STYLE[diagnosis.severity] ?? SEV_STYLE.Minor : null
 
   return (
-    <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 items-end`}>
+    <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 items-end animate-fade-slide-in`}>
       {/* Avatar — AI only */}
       {!isUser ? <CatAvatar /> : <div className="w-7 flex-shrink-0" />}
 
       <div className={`max-w-[78%] space-y-2 ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
         {/* Bubble */}
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-card ${
             isUser
               ? 'bg-[#FFC200] text-gray-900 font-medium rounded-br-sm'
-              : 'bg-gray-800 text-gray-100 rounded-bl-sm border border-gray-700/50'
+              : 'bg-gray-800/90 text-gray-100 rounded-bl-sm border border-gray-700/40 backdrop-blur-sm'
           }`}
         >
           {content}
@@ -52,16 +52,16 @@ export default function MessageBubble({ role, content, diagnosis, timestamp, isL
 
         {/* Timestamp */}
         {timestamp && isLast && (
-          <span className={`text-[10px] text-gray-600 px-1 ${isUser ? 'self-end' : 'self-start'}`}>
+          <span className={`text-[10px] text-gray-600 px-1 animate-fade-in ${isUser ? 'self-end' : 'self-start'}`}>
             {timestamp}
           </span>
         )}
 
         {/* Diagnosis card — AI only */}
         {!isUser && diagnosis && sev && (
-          <div className="w-full rounded-xl border border-gray-700/60 bg-gray-900 overflow-hidden shadow-md">
+          <div className="w-full rounded-xl border border-gray-700/50 bg-gray-900/80 overflow-hidden shadow-card animate-slide-down backdrop-blur-sm">
             {/* Severity bar */}
-            <div className={`h-0.5 w-full ${sev.bar}`} />
+            <div className={`h-0.5 w-full ${sev.bar}`} style={{ boxShadow: `0 0 8px var(--tw-shadow-color)` }} />
 
             <div className="p-3 space-y-2.5 text-xs">
               {/* Stats row */}

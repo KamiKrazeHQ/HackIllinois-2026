@@ -29,6 +29,46 @@ const RISK_BADGE: Record<string, string> = {
   Critical: 'bg-red-900 text-red-300 border-red-700',
 }
 
+const RISK_COLOR: Record<string, string> = {
+  Low: '#4ade80',
+  Medium: '#FFC200',
+  High: '#fb923c',
+  Critical: '#f87171',
+}
+
+function RiskGauge({ pct, level }: { pct: number; level: string }) {
+  const r = 36
+  const cx = 44
+  const cy = 44
+  const circumference = Math.PI * r  // half-circle arc length
+  // Arc goes from 180° (left) to 0° (right) — bottom half hidden
+  const filled = (Math.min(pct, 100) / 100) * circumference
+  const color = RISK_COLOR[level] ?? '#FFC200'
+  return (
+    <svg width={88} height={52} viewBox="0 0 88 52" className="flex-shrink-0">
+      {/* Track */}
+      <path
+        d={`M8,44 A${r},${r} 0 0,1 80,44`}
+        fill="none" stroke="#374151" strokeWidth={8} strokeLinecap="round"
+      />
+      {/* Filled arc */}
+      <path
+        d={`M8,44 A${r},${r} 0 0,1 80,44`}
+        fill="none" stroke={color} strokeWidth={8} strokeLinecap="round"
+        strokeDasharray={`${filled} ${circumference}`}
+        style={{ filter: `drop-shadow(0 0 4px ${color}88)` }}
+      />
+      {/* Percentage */}
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={16} fontWeight="bold" fill="white">
+        {pct.toFixed(0)}%
+      </text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fontSize={8} fill="#6b7280">
+        14-day risk
+      </text>
+    </svg>
+  )
+}
+
 function Badge({ text, cls }: { text: string; cls: string }) {
   return <span className={`px-2.5 py-0.5 rounded-full border text-xs font-semibold ${cls}`}>{text}</span>
 }
@@ -99,13 +139,15 @@ export default function ReportCard({ diagnosis, vision, audio, risk }: Props) {
 
       {risk && (
         <Section title="Risk Assessment">
-          <div className="flex items-center justify-between">
-            <Badge text={risk.risk_level} cls={RISK_BADGE[risk.risk_level] ?? RISK_BADGE.Medium} />
-            <span className="text-3xl font-bold text-white">{risk.failure_probability_14_days.toFixed(0)}%</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div><p className="text-xs text-gray-500">Est. Downtime Cost</p><p className="text-white font-semibold">${risk.estimated_downtime_cost_usd.toLocaleString()}</p></div>
-            <div><p className="text-xs text-gray-500">Action Window</p><p className="text-white text-xs">{risk.recommended_action_window}</p></div>
+          <div className="flex items-center gap-4">
+            <RiskGauge pct={risk.failure_probability_14_days} level={risk.risk_level} />
+            <div className="flex-1 space-y-2">
+              <Badge text={risk.risk_level} cls={RISK_BADGE[risk.risk_level] ?? RISK_BADGE.Medium} />
+              <div className="grid grid-cols-1 gap-1.5 text-sm">
+                <div><p className="text-xs text-gray-500">Est. Downtime Cost</p><p className="text-white font-semibold">${risk.estimated_downtime_cost_usd.toLocaleString()}</p></div>
+                <div><p className="text-xs text-gray-500">Action Window</p><p className="text-white text-xs">{risk.recommended_action_window}</p></div>
+              </div>
+            </div>
           </div>
         </Section>
       )}

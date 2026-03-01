@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CAT Equipment Inspection Report</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12px; margin: 40px; color: #111; }
+  h1 { font-size: 18px; margin-bottom: 2px; }
+  .logo { font-size: 28px; font-weight: 900; color: #FFC200; letter-spacing: -1px; }
+  .sub { font-size: 11px; color: #555; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th { background: #222; color: #fff; text-align: left; padding: 6px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 5px 8px; border-bottom: 1px solid #ddd; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 13px; font-weight: bold; border-bottom: 2px solid #FFC200; padding-bottom: 3px; margin-bottom: 8px; }
+  .badge-ok { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+  .badge-warn { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+  .badge-fail { background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+  .notes { background: #fffbe6; border: 1px solid #FFC200; border-radius: 4px; padding: 10px; font-size: 11px; line-height: 1.6; }
+  .footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
+  @media print { body { margin: 20px; } }
+</style>
+</head>
+<body>
+
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+  <div>
+    <div class="logo">CAT</div>
+    <div style="font-size:14px; font-weight:bold;">Equipment Inspection Report</div>
+    <div class="sub">Caterpillar Inc. · Preventive Maintenance Division</div>
+  </div>
+  <div style="text-align:right; font-size:11px; color:#555;">
+    <div><strong>Inspection #:</strong> INS-2026-0228</div>
+    <div><strong>Date:</strong> February 28, 2026</div>
+    <div><strong>Inspector:</strong> J. Martinez</div>
+    <div><strong>Site:</strong> Champaign Construction Yard</div>
+  </div>
+</div>
+
+<!-- Machine Info -->
+<div class="section">
+  <div class="section-title">Machine Information</div>
+  <table>
+    <tr><td><strong>Model</strong></td><td>CAT 336 Hydraulic Excavator</td><td><strong>PIN</strong></td><td style="font-family:monospace;">CAT336GC00001234X</td></tr>
+    <tr><td><strong>Serial No.</strong></td><td>00001234X</td><td><strong>Year</strong></td><td>2021</td></tr>
+    <tr><td><strong>Hours (SMU)</strong></td><td>4,812 hrs</td><td><strong>Last Service</strong></td><td>December 15, 2025</td></tr>
+    <tr><td><strong>Fuel Type</strong></td><td>Diesel</td><td><strong>Operating Location</strong></td><td>Sector B — Excavation</td></tr>
+  </table>
+</div>
+
+<!-- Fluid Analysis -->
+<div class="section">
+  <div class="section-title">Fluid & Filter Inspection</div>
+  <table>
+    <tr><th>Item</th><th>Condition</th><th>Reading / Notes</th><th>Status</th></tr>
+    <tr><td>Engine Oil</td><td>Dark brown, slightly viscous</td><td>Level OK · last changed 450 hrs ago</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Hydraulic Oil</td><td>Milky appearance, possible water contamination</td><td>Sample sent to lab · temp running 92°C</td><td><span class="badge-fail">FAIL</span></td></tr>
+    <tr><td>Coolant</td><td>Clear, correct colour</td><td>Level within range · freeze protection OK</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Transmission Fluid</td><td>Slight metal particle presence</td><td>Magnetic plug showed fine grey sheen</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Engine Air Filter</td><td>Heavy dust loading</td><td>Restriction indicator in red zone</td><td><span class="badge-fail">REPLACE</span></td></tr>
+    <tr><td>Hydraulic Filter</td><td>Bypass indicator triggered</td><td>Filter element overdue by 200 hrs</td><td><span class="badge-fail">REPLACE</span></td></tr>
+    <tr><td>Fuel Filter</td><td>Normal</td><td>Within service interval</td><td><span class="badge-ok">OK</span></td></tr>
+  </table>
+</div>
+
+<!-- Undercarriage -->
+<div class="section">
+  <div class="section-title">Undercarriage Inspection</div>
+  <table>
+    <tr><th>Component</th><th>Wear %</th><th>Notes</th><th>Status</th></tr>
+    <tr><td>Track Shoes (Left)</td><td>62%</td><td>Uneven wear on outer edge — possible misalignment</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Track Shoes (Right)</td><td>58%</td><td>Normal wear pattern</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Sprockets</td><td>71%</td><td>Hook wear visible on 3 teeth · approaching replacement threshold</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Idlers</td><td>45%</td><td>Both sides within spec</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Track Rollers</td><td>68%</td><td>2 rollers leaking seal on left side</td><td><span class="badge-fail">REPLACE</span></td></tr>
+    <tr><td>Track Tension</td><td>—</td><td>Left side 15 mm sagging — needs adjustment</td><td><span class="badge-warn">Adjust</span></td></tr>
+  </table>
+</div>
+
+<!-- Hydraulic System -->
+<div class="section">
+  <div class="section-title">Hydraulic System</div>
+  <table>
+    <tr><th>Component</th><th>Reading</th><th>Spec</th><th>Status</th></tr>
+    <tr><td>System Pressure</td><td>310 bar</td><td>315–325 bar</td><td><span class="badge-warn">Low</span></td></tr>
+    <tr><td>Boom Cylinder — Left</td><td>Slight wiper seal seep</td><td>No leakage</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Boom Cylinder — Right</td><td>No leakage</td><td>No leakage</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Stick Cylinder</td><td>Active seep at rod end</td><td>No leakage</td><td><span class="badge-fail">REPAIR</span></td></tr>
+    <tr><td>Bucket Cylinder</td><td>No leakage</td><td>No leakage</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Swing Motor</td><td>Noisy at low RPM, vibration felt</td><td>Smooth operation</td><td><span class="badge-fail">Investigate</span></td></tr>
+    <tr><td>Hydraulic Pump</td><td>Efficiency ~88%</td><td>&gt;92%</td><td><span class="badge-warn">Degraded</span></td></tr>
+  </table>
+</div>
+
+<!-- Engine -->
+<div class="section">
+  <div class="section-title">Engine & Electrical</div>
+  <table>
+    <tr><th>Item</th><th>Observation</th><th>Status</th></tr>
+    <tr><td>Engine Start / Idle</td><td>Cold start rough for ~8 seconds, smooths out</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Exhaust Smoke</td><td>Light blue smoke at startup — burning some oil</td><td><span class="badge-warn">Monitor</span></td></tr>
+    <tr><td>Active Fault Codes</td><td>MID 036 CID 0110 FMI 03 — Coolant temp sensor voltage high</td><td><span class="badge-fail">REPAIR</span></td></tr>
+    <tr><td>Battery Voltage</td><td>12.4 V (static)</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Alternator Output</td><td>13.9 V at idle</td><td><span class="badge-ok">OK</span></td></tr>
+    <tr><td>Belts & Hoses</td><td>Fan belt showing minor cracking</td><td><span class="badge-warn">Replace soon</span></td></tr>
+  </table>
+</div>
+
+<!-- Inspector Notes -->
+<div class="section">
+  <div class="section-title">Inspector Notes & Recommended Actions</div>
+  <div class="notes">
+    <strong>Priority 1 (Immediate — do not operate until resolved):</strong><br>
+    · Hydraulic oil contamination (water ingress) — locate and seal source before continued operation. Drain and refill hydraulic tank.<br>
+    · Stick cylinder rod-end seal leaking — pressure loss risk. Schedule seal replacement within 48 hrs.<br>
+    · Air filter replacement overdue — engine protection compromised.<br><br>
+    <strong>Priority 2 (Within 1 week):</strong><br>
+    · Hydraulic filter element replacement (bypass indicator triggered).<br>
+    · Diagnose swing motor vibration — possible bearing wear or cavitation.<br>
+    · Investigate and repair coolant temperature sensor (fault code MID 036 CID 0110).<br>
+    · Replace 2 leaking left-side track rollers and adjust track tension.<br><br>
+    <strong>Priority 3 (Next scheduled service):</strong><br>
+    · Sprocket inspection at 5,000 hrs — approaching replacement threshold.<br>
+    · Engine oil change due (450 hrs since last change).<br>
+    · Fan belt replacement — cracking visible.<br>
+    · Monitor hydraulic pump efficiency; consider replacement if below 85% at next check.<br><br>
+    <strong>Overall Condition: POOR</strong> — machine should not return to full operation until Priority 1 items are resolved.
+  </div>
+</div>
+
+<div class="footer">
+  Inspector Signature: J. Martinez &nbsp;|&nbsp; Supervisor Approval: T. Reeves &nbsp;|&nbsp; Report generated: 2026-02-28 &nbsp;|&nbsp; CAT Maintenance Form MF-3340-Rev7
+</div>
+
+</body>
+</html>

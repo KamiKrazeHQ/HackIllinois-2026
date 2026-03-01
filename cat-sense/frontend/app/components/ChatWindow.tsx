@@ -1,7 +1,10 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { fetchChat } from '../api'
+import { fetchChat, ApiError } from '../api'
 import MessageBubble from './MessageBubble'
+import ImageUpload from './ImageUpload'
+import AudioRecorder from './AudioRecorder'
+import SensorInput from './SensorInput'
 
 interface Diagnosis {
   diagnosis_summary: string
@@ -11,6 +14,10 @@ interface Diagnosis {
   estimated_cost: string
   recommended_action: string
 }
+interface VisionResult { description: string; detected_issues: string[]; severity: string }
+interface AudioResult { dominant_frequency_hz: number; anomaly_detected: boolean; anomaly_type: string; severity: string }
+interface RiskResult { failure_probability_14_days: number; estimated_downtime_cost_usd: number; recommended_action_window: string; risk_level: string }
+
 interface Message {
   role: 'user' | 'assistant'
   content: string
@@ -20,6 +27,24 @@ interface Message {
 interface Props {
   sessionId: string
   onDiagnosis: (d: Diagnosis) => void
+  onVision?: (r: VisionResult) => void
+  onAudio?: (r: AudioResult) => void
+  onRisk?: (r: RiskResult) => void
+}
+
+type WidgetType = 'image' | 'audio' | 'sensors' | null
+
+function detectWidget(text: string): WidgetType {
+  if (/upload.*(photo|image|picture)|share.*image|send.*photo|photo.*equipment|attach.*image/i.test(text)) return 'image'
+  if (/record.*(audio|sound)|upload.*audio|audio.*sample|sound.*sample|microphone/i.test(text)) return 'audio'
+  if (/temperature|pressure|sensor.*read|thermal|operating temp|enter.*reading/i.test(text)) return 'sensors'
+  return null
+}
+
+const WIDGET_LABEL: Record<NonNullable<WidgetType>, string> = {
+  image: '📷 Vision Upload',
+  audio: '🎙 Audio Input',
+  sensors: '📊 Sensor Readings',
 }
 
 function now() {
@@ -54,7 +79,7 @@ const SUGGESTIONS = [
   'What caused this fault pattern?',
 ]
 
-export default function ChatWindow({ sessionId, onDiagnosis }: Props) {
+export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, onRisk }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -65,43 +90,77 @@ export default function ChatWindow({ sessionId, onDiagnosis }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [activeWidget, setActiveWidget] = useState<WidgetType>(null)
+  const [failedMessage, setFailedMessage] = useState<string | null>(null)
+  const [errorText, setErrorText] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
+  }, [messages, loading, activeWidget])
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || loading) return
     setInput('')
     setShowSuggestions(false)
+    setActiveWidget(null)
+    setFailedMessage(null)
+    setErrorText(null)
     setMessages(prev => [...prev, { role: 'user', content: trimmed, timestamp: now() }])
     setLoading(true)
     try {
       const data = await fetchChat(trimmed, sessionId)
       const diagnosis: Diagnosis = data.diagnosis ?? {}
+      const reply: string = data.reply ?? ''
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: data.reply, diagnosis, timestamp: now() },
+        { role: 'assistant', content: reply, diagnosis, timestamp: now() },
       ])
       if (data.diagnosis?.severity) onDiagnosis(data.diagnosis)
       if (data.audio_url && audioRef.current) {
         audioRef.current.src = `http://localhost:8000${data.audio_url}`
         audioRef.current.play().catch(() => {})
       }
-    } catch {
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Could not reach the backend. Make sure the server is running on port 8000.', timestamp: now() },
-      ])
+      setActiveWidget(detectWidget(reply))
+    } catch (err) {
+      const isNetwork = err instanceof TypeError
+      const isApi = err instanceof ApiError
+      setErrorText(
+        isNetwork
+          ? 'Cannot reach the backend. Is the server running on port 8000?'
+          : isApi && err.status >= 500
+          ? `Server error (${err.status}). Try again in a moment.`
+          : isApi
+          ? `Request failed: ${err.message}`
+          : 'Something went wrong. Please try again.'
+      )
+      setFailedMessage(trimmed)
     } finally {
       setLoading(false)
       inputRef.current?.focus()
     }
   }, [loading, sessionId, onDiagnosis])
+
+  function handleVisionResult(r: VisionResult) {
+    onVision?.(r)
+    setActiveWidget(null)
+    send(`Vision analysis complete. Severity: ${r.severity}. Issues detected: ${r.detected_issues.join(', ') || 'none'}. Description: ${r.description}`)
+  }
+
+  function handleAudioResult(r: AudioResult) {
+    onAudio?.(r)
+    setActiveWidget(null)
+    send(`Audio analysis complete. Dominant frequency: ${r.dominant_frequency_hz.toFixed(1)} Hz. Anomaly: ${r.anomaly_type}. Severity: ${r.severity}.`)
+  }
+
+  function handleRiskResult(r: RiskResult) {
+    onRisk?.(r)
+    setActiveWidget(null)
+    send(`Sensor data submitted. Failure probability: ${r.failure_probability_14_days.toFixed(0)}% over 14 days. Risk level: ${r.risk_level}. Estimated downtime cost: $${r.estimated_downtime_cost_usd.toLocaleString()}.`)
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -134,6 +193,62 @@ export default function ChatWindow({ sessionId, onDiagnosis }: Props) {
                 {s}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Error banner with retry */}
+        {errorText && !loading && (
+          <div className="mb-4 pl-9 animate-fade-slide-in">
+            <div className="bg-red-950/50 border border-red-800/60 rounded-2xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-400 text-base mt-0.5 flex-shrink-0">⚠</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-red-300">{errorText}</p>
+                {failedMessage && (
+                  <button
+                    onClick={() => send(failedMessage)}
+                    className="mt-2 text-xs text-red-400 hover:text-red-200 underline underline-offset-2 transition-colors"
+                  >
+                    Retry: "{failedMessage.length > 40 ? failedMessage.slice(0, 40) + '…' : failedMessage}"
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => { setErrorText(null); setFailedMessage(null) }}
+                className="text-red-700 hover:text-red-400 text-lg leading-none flex-shrink-0"
+                aria-label="Dismiss error"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Inline widget — rendered after last AI message */}
+        {activeWidget && !loading && (
+          <div className="mb-4 pl-9">
+            <div className="bg-gray-900 border border-[#FFC200]/30 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
+                <span className="text-xs font-semibold text-[#FFC200]">{WIDGET_LABEL[activeWidget]}</span>
+                <button
+                  onClick={() => setActiveWidget(null)}
+                  className="text-gray-600 hover:text-gray-400 text-lg leading-none"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4">
+                {activeWidget === 'image' && (
+                  <ImageUpload sessionId={sessionId} onResult={handleVisionResult} />
+                )}
+                {activeWidget === 'audio' && (
+                  <AudioRecorder sessionId={sessionId} onResult={handleAudioResult} />
+                )}
+                {activeWidget === 'sensors' && (
+                  <SensorInput sessionId={sessionId} onResult={handleRiskResult} />
+                )}
+              </div>
+            </div>
           </div>
         )}
 

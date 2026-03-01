@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
-from routes import chat, vision, audio, risk, dealers
+from routes import chat, vision, audio, risk, dealers, garage
 from services.rag_service import initialise as rag_init
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -76,6 +76,7 @@ app.include_router(vision.router)
 app.include_router(audio.router)
 app.include_router(risk.router)
 app.include_router(dealers.router)
+app.include_router(garage.router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
