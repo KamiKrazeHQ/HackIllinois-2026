@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import Providers from './providers'
 
 export const metadata: Metadata = {
   title: 'CAT Sense',
@@ -13,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className="bg-gray-950 text-gray-100 min-h-screen"
         style={{ fontFamily: "'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif" }}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

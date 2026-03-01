@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore'
 import { app, db } from '../firebase'
 import { addMachine as addMachineAPI, scanInspection as scanInspectionAPI } from '../api'
+import { useT } from '../i18n/TranslationContext'
 
 interface InspectionRecord {
   id: string
@@ -60,6 +61,7 @@ function MachineDetail({ machine, onBack, onUpdated }: {
   onBack: () => void
   onUpdated: (m: Machine) => void
 }) {
+  const { t } = useT()
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -73,11 +75,9 @@ function MachineDetail({ machine, onBack, onUpdated }: {
       const record: InspectionRecord = await scanInspectionAPI(machine.id, file, machine.description, machine.pin)
       record.filename = file.name
 
-      // Update UI immediately
       const updated = { ...machine, inspections: [...machine.inspections, record] }
       onUpdated(updated)
 
-      // Persist to Firestore in background — don't block the UI
       updateDoc(machineDoc(machine.id), {
         inspections: arrayUnion(record),
       }).catch(err => console.warn('[Scan] Firestore sync failed:', err))
@@ -95,7 +95,7 @@ function MachineDetail({ machine, onBack, onUpdated }: {
   return (
     <div className="space-y-4">
       <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#FFC200] transition-colors">
-        ← Back to Garage
+        {t('backToGarage')}
       </button>
 
       {/* Machine info card */}
@@ -108,16 +108,16 @@ function MachineDetail({ machine, onBack, onUpdated }: {
           <span className="text-2xl">🏗</span>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-          <div><span className="text-gray-500">PIN</span><p className="text-gray-200 font-mono">{machine.pin}</p></div>
-          <div><span className="text-gray-500">Model</span><p className="text-gray-200">{machine.model_code}</p></div>
-          <div><span className="text-gray-500">Family</span><p className="text-gray-200">{machine.model_family}</p></div>
-          <div><span className="text-gray-500">Serial</span><p className="text-gray-200 font-mono">{machine.serial_number || '—'}</p></div>
-          {machine.year && <div><span className="text-gray-500">Year</span><p className="text-gray-200">{machine.year}</p></div>}
-          <div><span className="text-gray-500">Added</span><p className="text-gray-200">{fmt(machine.added_at)}</p></div>
+          <div><span className="text-gray-500">{t('pinLabel')}</span><p className="text-gray-200 font-mono">{machine.pin}</p></div>
+          <div><span className="text-gray-500">{t('modelLabel')}</span><p className="text-gray-200">{machine.model_code}</p></div>
+          <div><span className="text-gray-500">{t('familyLabel')}</span><p className="text-gray-200">{machine.model_family}</p></div>
+          <div><span className="text-gray-500">{t('serialLabel')}</span><p className="text-gray-200 font-mono">{machine.serial_number || '—'}</p></div>
+          {machine.year && <div><span className="text-gray-500">{t('yearLabel')}</span><p className="text-gray-200">{machine.year}</p></div>}
+          <div><span className="text-gray-500">{t('addedLabel')}</span><p className="text-gray-200">{fmt(machine.added_at)}</p></div>
         </div>
         {condStyle && (
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-[10px] text-gray-500">Latest condition</span>
+            <span className="text-[10px] text-gray-500">{t('latestCondition')}</span>
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold ${condStyle.badge}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${condStyle.dot}`} />{latestCondition}
             </span>
@@ -127,15 +127,15 @@ function MachineDetail({ machine, onBack, onUpdated }: {
 
       {/* Upload inspection */}
       <div className="bg-gray-900 border border-[#FFC200]/20 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-[#FFC200] mb-2">📋 Upload Inspection Document</p>
-        <p className="text-[11px] text-gray-500 mb-3">Upload a photo or PDF — results are saved to your account.</p>
+        <p className="text-xs font-semibold text-[#FFC200] mb-2">{t('uploadInspectionDoc')}</p>
+        <p className="text-[11px] text-gray-500 mb-3">{t('uploadHint')}</p>
         <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleScan} />
         <button
           onClick={() => fileRef.current?.click()}
           disabled={scanning}
           className="w-full py-2 rounded-xl border border-dashed border-[#FFC200]/40 text-xs text-[#FFC200] hover:bg-[#FFC200]/5 disabled:opacity-40 transition-colors"
         >
-          {scanning ? 'Scanning…' : '+ Choose file to scan'}
+          {scanning ? t('scanning') : t('chooseFile')}
         </button>
         {scanError && <p className="mt-2 text-xs text-red-400">{scanError}</p>}
       </div>
@@ -172,7 +172,7 @@ function MachineDetail({ machine, onBack, onUpdated }: {
           })}
         </div>
       ) : (
-        <p className="text-xs text-gray-600 text-center py-4">No inspections yet — upload your first document above.</p>
+        <p className="text-xs text-gray-600 text-center py-4">{t('noInspections')}</p>
       )}
     </div>
   )
@@ -181,6 +181,7 @@ function MachineDetail({ machine, onBack, onUpdated }: {
 // ── Garage List ────────────────────────────────────────────────────────────────
 
 export default function GarageView() {
+  const { t } = useT()
   const [machines, setMachines] = useState<Machine[]>([])
   const [selected, setSelected] = useState<Machine | null>(null)
   const [nickname, setNickname] = useState('')
@@ -260,18 +261,18 @@ export default function GarageView() {
     <div className="space-y-4">
       {/* Add machine form */}
       <div className="bg-gray-900 border border-[#FFC200]/20 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-[#FFC200] mb-3">🏗 Register a Machine</p>
+        <p className="text-xs font-semibold text-[#FFC200] mb-3">{t('registerMachine')}</p>
         <form onSubmit={handleAdd} className="space-y-2">
           <input
             className="w-full bg-gray-800 text-sm text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#FFC200]/40"
-            placeholder="Nickname (e.g. Excavator #3)"
+            placeholder={t('nicknamePlaceholder')}
             value={nickname}
             onChange={e => setNickname(e.target.value)}
             maxLength={60}
           />
           <input
             className="w-full bg-gray-800 text-sm text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#FFC200]/40 font-mono tracking-wider"
-            placeholder="17-character CAT PIN"
+            placeholder={t('pinPlaceholder')}
             value={pin}
             onChange={e => setPin(e.target.value.toUpperCase())}
             maxLength={17}
@@ -282,19 +283,19 @@ export default function GarageView() {
             disabled={adding || pin.length !== 17 || !nickname.trim()}
             className="w-full py-2 rounded-xl bg-[#FFC200] text-gray-900 text-xs font-semibold hover:bg-yellow-300 disabled:opacity-30 transition-colors"
           >
-            {adding ? 'Adding…' : 'Add Machine'}
+            {adding ? t('adding') : t('addMachine')}
           </button>
         </form>
       </div>
 
       {/* Machine list */}
       {loading ? (
-        <p className="text-xs text-gray-600 text-center py-6">Loading garage…</p>
+        <p className="text-xs text-gray-600 text-center py-6">{t('loadingGarage')}</p>
       ) : machines.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-3xl mb-2">🏗</p>
-          <p className="text-sm text-gray-500">Your garage is empty.</p>
-          <p className="text-xs text-gray-600 mt-1">Add your first machine above.</p>
+          <p className="text-sm text-gray-500">{t('garageEmpty')}</p>
+          <p className="text-xs text-gray-600 mt-1">{t('addFirst')}</p>
         </div>
       ) : (
         <div className="space-y-2">

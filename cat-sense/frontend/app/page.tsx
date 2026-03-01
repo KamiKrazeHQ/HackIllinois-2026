@@ -10,7 +10,8 @@ import SensorInput from './components/SensorInput'
 import ReportCard from './components/ReportCard'
 import GarageView from './components/GarageView'
 import InspectionAnalyzer from './components/InspectionAnalyzer'
-import TranslationDemo from './components/TranslationDemo'
+import { useT, LANGS } from './i18n/TranslationContext'
+import { Loader2 } from 'lucide-react'
 
 interface Diagnosis {
   diagnosis_summary: string
@@ -24,7 +25,7 @@ interface VisionResult { description: string; detected_issues: string[]; severit
 interface AudioResult { dominant_frequency_hz: number; anomaly_detected: boolean; anomaly_type: string; severity: string }
 interface RiskResult { failure_probability_14_days: number; estimated_downtime_cost_usd: number; recommended_action_window: string; risk_level: string }
 
-const TABS = ['Chat', 'Vision', 'Audio', 'Sensors', 'Report', 'Garage', 'Inspect', 'Translate'] as const
+const TABS = ['Chat', 'Vision', 'Audio', 'Sensors', 'Report', 'Garage', 'Inspect'] as const
 type Tab = typeof TABS[number]
 
 const TAB_ICONS: Record<Tab, string> = {
@@ -35,12 +36,22 @@ const TAB_ICONS: Record<Tab, string> = {
   Report: '📋',
   Garage: '🏗',
   Inspect: '🔩',
-  Translate: '🌐',
+}
+
+const TAB_KEY: Record<Tab, string> = {
+  Chat: 'tabChat',
+  Vision: 'tabVision',
+  Audio: 'tabAudio',
+  Sensors: 'tabSensors',
+  Report: 'tabReport',
+  Garage: 'tabGarage',
+  Inspect: 'tabInspect',
 }
 
 export default function Home() {
   const [sessionId, setSessionId] = useState('session-default')
   const [user, setUser] = useState<{ email: string | null } | null | undefined>(undefined)
+  const { t, lang, setLang, translating } = useT()
 
   useEffect(() => {
     setSessionId('session-' + Math.random().toString(36).slice(2, 9))
@@ -58,15 +69,12 @@ export default function Home() {
   const [audio, setAudio] = useState<AudioResult | null>(null)
   const [risk, setRisk] = useState<RiskResult | null>(null)
 
-  // Still loading auth state
   if (user === undefined) return null
-
-  // Not logged in
   if (user === null) return <Login />
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto relative">
-      {/* Ambient glow — decorative, pointer-events-none */}
+      {/* Ambient glow */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 max-w-2xl mx-auto"
@@ -83,51 +91,73 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-white leading-none tracking-tight">CAT Sense</h1>
-            <p className="text-[10px] text-gray-500 leading-none mt-0.5 tracking-wide">Heavy Machinery Diagnostics</p>
+            <p className="text-[10px] text-gray-500 leading-none mt-0.5 tracking-wide">{t('appSubtitle')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Status badges */}
           {(diagnosis || vision || audio || risk) && (
             <div className="flex gap-1.5 items-center">
               {vision && (
                 <span className="flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Vision
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{t('tabVision')}
                 </span>
               )}
               {audio && (
                 <span className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />Audio
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />{t('tabAudio')}
                 </span>
               )}
               {risk && (
                 <span className="flex items-center gap-1 text-[10px] text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />Sensors
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />{t('tabSensors')}
                 </span>
               )}
             </div>
           )}
+
+          {/* Language switcher */}
+          <div className="flex gap-0.5 items-center">
+            {translating && <Loader2 className="h-3 w-3 animate-spin text-[#FFC200] mr-1" />}
+            {LANGS.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                disabled={translating}
+                title={l.name}
+                className={`px-1.5 py-0.5 text-[10px] font-bold rounded transition-all disabled:opacity-40 ${
+                  lang === l.code
+                    ? 'bg-[#FFC200] text-gray-900'
+                    : 'text-gray-600 hover:text-gray-300'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
           <span className="text-[10px] text-gray-700 font-mono tabular-nums hidden sm:block">{sessionId}</span>
           <button
             onClick={() => signOut(getAuth(app))}
             className="text-[10px] text-gray-600 hover:text-gray-300 border border-gray-800 hover:border-gray-600 rounded-lg px-2 py-1 transition-colors"
           >
-            Sign out
+            {t('signOut')}
           </button>
         </div>
       </header>
 
       {/* Tab bar */}
       <nav className="border-b border-gray-800/80 px-3 flex gap-0.5 flex-shrink-0 bg-gray-950/60 backdrop-blur-sm">
-        {TABS.map(t => (
+        {TABS.map(tabName => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabName}
+            onClick={() => setTab(tabName)}
             className={`px-3 py-2.5 text-xs font-medium transition-all relative rounded-t-md ${
-              tab === t ? 'text-[#FFC200]' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
+              tab === tabName ? 'text-[#FFC200]' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
             }`}
           >
-            <span className="mr-1">{TAB_ICONS[t]}</span>{t}
-            {tab === t && (
+            <span className="mr-1">{TAB_ICONS[tabName]}</span>{t(TAB_KEY[tabName])}
+            {tab === tabName && (
               <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#FFC200] rounded-full shadow-[0_0_6px_rgba(255,194,0,0.6)]" />
             )}
           </button>
@@ -161,7 +191,6 @@ export default function Home() {
             )}
             {tab === 'Garage' && <GarageView />}
             {tab === 'Inspect' && <InspectionAnalyzer />}
-            {tab === 'Translate' && <TranslationDemo />}
           </div>
         )}
       </main>

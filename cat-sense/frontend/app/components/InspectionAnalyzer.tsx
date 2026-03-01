@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { Upload, FileText, Loader2, AlertTriangle, Eye, CheckCircle, ChevronDown, ChevronUp, ShoppingCart, MapPin } from 'lucide-react'
 import { uploadInspectionReport } from '../api'
+import { useT } from '../i18n/TranslationContext'
 
 interface Part {
   name: string
@@ -26,6 +27,7 @@ interface InspectionResult {
 }
 
 function FaultCard({ fault }: { fault: Fault }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const isUrgent = fault.severity === 'Urgent'
   const borderColor = isUrgent ? '#dc2626' : '#f97316'
@@ -61,7 +63,7 @@ function FaultCard({ fault }: { fault: Fault }) {
 
           {fault.parts && fault.parts.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] text-[#FFC200]/60 uppercase tracking-widest font-medium">Recommended Parts</p>
+              <p className="text-[10px] text-[#FFC200]/60 uppercase tracking-widest font-medium">{t('recommendedParts')}</p>
               {fault.parts.map(part => (
                 <a
                   key={part.part_number}
@@ -89,7 +91,7 @@ function FaultCard({ fault }: { fault: Fault }) {
                 className="flex items-center gap-1.5 rounded-lg bg-[#FFC200] px-3 py-1.5 text-xs font-bold text-gray-900 hover:bg-yellow-300 transition-colors"
               >
                 <ShoppingCart className="h-3 w-3" />
-                Buy Genuine CAT Part
+                {t('buyPart')}
               </a>
             )}
             <a
@@ -99,7 +101,7 @@ function FaultCard({ fault }: { fault: Fault }) {
               className="flex items-center gap-1.5 rounded-lg border border-[#FFC200]/30 px-3 py-1.5 text-xs font-bold text-[#FFC200] hover:bg-[#FFC200]/10 transition-colors"
             >
               <MapPin className="h-3 w-3" />
-              Locate Service Center
+              {t('locateService')}
             </a>
           </div>
         </div>
@@ -109,6 +111,7 @@ function FaultCard({ fault }: { fault: Fault }) {
 }
 
 export default function InspectionAnalyzer() {
+  const { t } = useT()
   const [result, setResult] = useState<InspectionResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -164,8 +167,8 @@ export default function InspectionAnalyzer() {
         ) : (
           <>
             <Upload className="h-8 w-8 text-[#FFC200] mx-auto mb-2" />
-            <p className="text-sm font-semibold text-gray-200">Drop your inspection document here</p>
-            <p className="text-xs text-gray-500 mt-1">PDF · JPG · PNG · WebP — max 10 MB</p>
+            <p className="text-sm font-semibold text-gray-200">{t('dropInspection')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('dropInspectionHint')}</p>
           </>
         )}
       </div>
@@ -178,37 +181,36 @@ export default function InspectionAnalyzer() {
 
       {result && !loading && (
         <div className="space-y-3">
-          {/* Summary stats */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-900 border border-gray-700/50 rounded-xl p-3 text-center">
               <FileText className="h-4 w-4 text-[#FFC200] mx-auto mb-1" />
               <p className="text-lg font-extrabold text-white">{result.total_faults}</p>
-              <p className="text-[10px] text-gray-500">Total Faults</p>
+              <p className="text-[10px] text-gray-500">{t('totalFaults')}</p>
             </div>
             <div className="bg-gray-900 border border-red-500/20 rounded-xl p-3 text-center">
               <AlertTriangle className="h-4 w-4 text-red-400 mx-auto mb-1" />
               <p className="text-lg font-extrabold text-red-400">{result.urgent_count}</p>
-              <p className="text-[10px] text-gray-500">Urgent</p>
+              <p className="text-[10px] text-gray-500">{t('urgent')}</p>
             </div>
             <div className="bg-gray-900 border border-orange-500/20 rounded-xl p-3 text-center">
               <Eye className="h-4 w-4 text-orange-400 mx-auto mb-1" />
               <p className="text-lg font-extrabold text-orange-400">{result.monitor_count}</p>
-              <p className="text-[10px] text-gray-500">Monitor</p>
+              <p className="text-[10px] text-gray-500">{t('monitor')}</p>
             </div>
           </div>
 
           {result.total_faults === 0 ? (
             <div className="rounded-xl border border-green-700/30 bg-green-900/20 px-6 py-8 text-center">
               <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-              <p className="font-bold text-green-300">No faults detected</p>
-              <p className="text-xs text-gray-500 mt-1">This machine appears to be in good condition.</p>
+              <p className="font-bold text-green-300">{t('noFaultsDetected')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('goodCondition')}</p>
             </div>
           ) : (
             <div className="space-y-3">
               {urgentFaults.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[10px] text-red-400 uppercase tracking-widest font-medium px-1">
-                    Urgent — Immediate Action Required
+                    {t('urgentAction')}
                   </p>
                   {urgentFaults.map((fault, i) => <FaultCard key={i} fault={fault} />)}
                 </div>
@@ -216,7 +218,7 @@ export default function InspectionAnalyzer() {
               {monitorFaults.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[10px] text-orange-400 uppercase tracking-widest font-medium px-1">
-                    Monitor — Keep Under Observation
+                    {t('keepObservation')}
                   </p>
                   {monitorFaults.map((fault, i) => <FaultCard key={i} fault={fault} />)}
                 </div>

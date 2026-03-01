@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { uploadAudio } from '../api'
+import { useT } from '../i18n/TranslationContext'
 import VibrationGraph from './VibrationGraph'
 
 interface AudioResult {
@@ -21,6 +22,7 @@ const SEV_COLOR: Record<string, string> = {
 }
 
 export default function AudioRecorder({ sessionId, onResult }: Props) {
+  const { t } = useT()
   const [result, setResult] = useState<AudioResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [recording, setRecording] = useState(false)
@@ -53,7 +55,7 @@ export default function AudioRecorder({ sessionId, onResult }: Props) {
       mr.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/wav' })
         handleFile(new File([blob], 'recording.wav', { type: 'audio/wav' }))
-        stream.getTracks().forEach(t => t.stop())
+        stream.getTracks().forEach(tr => tr.stop())
       }
       mediaRef.current = mr
       mr.start()
@@ -75,7 +77,7 @@ export default function AudioRecorder({ sessionId, onResult }: Props) {
           onClick={() => inputRef.current?.click()}
           className="flex-1 border border-gray-700 rounded-xl py-3 text-sm text-gray-300 hover:border-gray-500 transition-colors"
         >
-          📂 Upload Audio File
+          {t('uploadAudioFile')}
         </button>
         <button
           onClick={recording ? stopRecording : startRecording}
@@ -85,31 +87,31 @@ export default function AudioRecorder({ sessionId, onResult }: Props) {
               : 'bg-[#FFC200] text-gray-900 hover:bg-yellow-300'
           }`}
         >
-          {recording ? '⏹ Stop Recording' : '🎙 Record Audio'}
+          {recording ? t('stopRecording') : t('recordAudio')}
         </button>
         <input ref={inputRef} type="file" accept=".wav,.mp3,.m4a,.ogg" hidden
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
       </div>
 
       {filename && <p className="text-xs text-gray-500 text-center truncate">{filename}</p>}
-      {loading && <p className="text-center text-[#FFC200] text-sm animate-pulse">Running FFT analysis…</p>}
+      {loading && <p className="text-center text-[#FFC200] text-sm animate-pulse">{t('runningFFT')}</p>}
 
       {result && !loading && (
         <div className="space-y-3">
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-gray-500 uppercase tracking-wider">FFT Analysis</span>
+              <span className="text-[11px] text-gray-500 uppercase tracking-wider">{t('fftAnalysis')}</span>
               <span className={`text-sm font-semibold ${SEV_COLOR[result.severity] ?? 'text-gray-400'}`}>
                 {result.severity}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs text-gray-500">Dominant Frequency</p>
+                <p className="text-xs text-gray-500">{t('dominantFrequency')}</p>
                 <p className="text-white font-mono text-lg">{result.dominant_frequency_hz.toFixed(1)} Hz</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Anomaly Type</p>
+                <p className="text-xs text-gray-500">{t('anomalyType')}</p>
                 <p className="text-white capitalize">{result.anomaly_type}</p>
               </div>
             </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { fetchChat, ApiError } from '../api'
+import { useT } from '../i18n/TranslationContext'
 import MessageBubble from './MessageBubble'
 import ImageUpload from './ImageUpload'
 import AudioRecorder from './AudioRecorder'
@@ -41,12 +42,6 @@ function detectWidget(text: string): WidgetType {
   return null
 }
 
-const WIDGET_LABEL: Record<NonNullable<WidgetType>, string> = {
-  image: '📷 Vision Upload',
-  audio: '🎙 Audio Input',
-  sensors: '📊 Sensor Readings',
-}
-
 function now() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
@@ -72,14 +67,21 @@ function TypingIndicator() {
   )
 }
 
-const SUGGESTIONS = [
-  'What are the most likely failure modes?',
-  'How urgent is the maintenance needed?',
-  'Estimate repair cost breakdown.',
-  'What caused this fault pattern?',
-]
-
 export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, onRisk }: Props) {
+  const { t } = useT()
+
+  const SUGGESTIONS = [
+    t('chatSuggestion0'),
+    t('chatSuggestion1'),
+    t('chatSuggestion2'),
+    t('chatSuggestion3'),
+  ]
+
+  const WIDGET_LABEL: Record<NonNullable<WidgetType>, string> = {
+    image: t('widgetImage'),
+    audio: t('widgetAudio'),
+    sensors: t('widgetSensors'),
+  }
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -130,12 +132,12 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
       const isApi = err instanceof ApiError
       setErrorText(
         isNetwork
-          ? 'Cannot reach the backend. Is the server running on port 8000?'
+          ? t('chatErrNetwork')
           : isApi && err.status >= 500
           ? `Server error (${err.status}). Try again in a moment.`
           : isApi
           ? `Request failed: ${err.message}`
-          : 'Something went wrong. Please try again.'
+          : t('chatErrGeneric')
       )
       setFailedMessage(trimmed)
     } finally {
@@ -261,7 +263,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
           <input
             ref={inputRef}
             className="flex-1 bg-transparent py-1.5 text-sm text-gray-100 placeholder-gray-500 outline-none"
-            placeholder="Ask about your equipment…"
+            placeholder={t('chatPlaceholder')}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send(input)}
@@ -279,7 +281,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
             </svg>
           </button>
         </div>
-        <p className="text-[10px] text-gray-700 text-center mt-1.5">Enter to send · Responses powered by Gemini</p>
+        <p className="text-[10px] text-gray-700 text-center mt-1.5">{t('chatFooter')}</p>
       </div>
 
       <style>{`

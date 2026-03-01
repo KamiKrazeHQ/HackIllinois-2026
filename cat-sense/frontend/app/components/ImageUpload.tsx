@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { uploadImage } from '../api'
+import { useT } from '../i18n/TranslationContext'
 
 interface ErrorFound {
   error_id: string
@@ -81,6 +82,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export default function ImageUpload({ sessionId, onResult }: Props) {
+  const { t } = useT()
   const [result, setResult] = useState<RichVisionResult | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -139,8 +141,8 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
         ) : (
           <>
             <div className="text-4xl mb-2">📷</div>
-            <p className="text-gray-400 text-sm">Drop an image or click to upload</p>
-            <p className="text-gray-600 text-xs mt-1">JPG · PNG · WebP · max 10 MB</p>
+            <p className="text-gray-400 text-sm">{t('dropImage')}</p>
+            <p className="text-gray-600 text-xs mt-1">{t('dropImageHint')}</p>
           </>
         )}
       </div>
@@ -150,7 +152,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
           <span className="w-2 h-2 rounded-full bg-[#FFC200] animate-bounce" style={{ animationDelay: '0ms' }} />
           <span className="w-2 h-2 rounded-full bg-[#FFC200] animate-bounce" style={{ animationDelay: '150ms' }} />
           <span className="w-2 h-2 rounded-full bg-[#FFC200] animate-bounce" style={{ animationDelay: '300ms' }} />
-          <span className="text-[#FFC200] text-sm ml-1">Analyzing with Rekognition + Claude…</span>
+          <span className="text-[#FFC200] text-sm ml-1">{t('analyzingVision')}</span>
         </div>
       )}
 
@@ -217,7 +219,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
           {/* Positive observations */}
           {result.positive_observations.length > 0 && (
             <div className="bg-green-900/20 border border-green-800/40 rounded-xl p-3 space-y-1">
-              <p className="text-[10px] text-green-400 uppercase tracking-wider font-medium">Positive Observations</p>
+              <p className="text-[10px] text-green-400 uppercase tracking-wider font-medium">{t('positiveObservations')}</p>
               {result.positive_observations.map((obs, i) => (
                 <p key={i} className="text-xs text-gray-300 flex gap-1.5">
                   <span className="text-green-500">✓</span>{obs}
@@ -229,7 +231,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
           {/* Follow-up */}
           {result.follow_up_recommended && result.follow_up_notes && (
             <div className="bg-orange-900/20 border border-orange-800/40 rounded-xl p-3">
-              <p className="text-[10px] text-orange-400 uppercase tracking-wider font-medium mb-1">Follow-up Recommended</p>
+              <p className="text-[10px] text-orange-400 uppercase tracking-wider font-medium mb-1">{t('followUpRecommended')}</p>
               <p className="text-xs text-gray-300">{result.follow_up_notes}</p>
             </div>
           )}
@@ -237,7 +239,7 @@ export default function ImageUpload({ sessionId, onResult }: Props) {
           {/* AWS Rekognition labels */}
           {result.rekognition_labels.length > 0 && (
             <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-2">AWS Rekognition Labels</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-2">{t('awsLabels')}</p>
               <div className="flex flex-wrap gap-1">
                 {result.rekognition_labels.slice(0, 12).map((lbl, i) => (
                   <span
