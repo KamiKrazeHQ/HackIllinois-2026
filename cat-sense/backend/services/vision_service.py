@@ -146,9 +146,11 @@ For "issues": include one entry per visually identifiable defect with an estimat
 """
 
 
+_VISION_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+
+
 def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: str = "image/jpeg") -> dict:
     from google import genai
-    from google.genai import types
     import PIL.Image
 
     api_key = os.getenv("GEMINI_API_KEY")
@@ -166,17 +168,26 @@ def _run_gemini(image_bytes: bytes, rekognition_result: dict | None, mime_type: 
         prompt_text = _PROMPT_DIRECT
 
     img = PIL.Image.open(io.BytesIO(image_bytes))
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[prompt_text, img],
-    )
 
     import re as _re
-    raw = response.text or ""
-    match = _re.search(r"\{.*\}", raw, _re.DOTALL)
-    if not match:
-        raise ValueError(f"No JSON object in vision response: {raw[:200]}")
-    return json.loads(match.group())
+    last_exc: Exception | None = None
+    for model in _VISION_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=[prompt_text, img],
+            )
+            if model != _VISION_MODELS[0]:
+                logger.info("Vision fell back to model: %s", model)
+            raw = response.text or ""
+            match = _re.search(r"\{.*\}", raw, _re.DOTALL)
+            if not match:
+                raise ValueError(f"No JSON object in vision response: {raw[:200]}")
+            return json.loads(match.group())
+        except Exception as exc:
+            logger.warning("Vision model %s failed (%s: %s), trying next", model, type(exc).__name__, exc)
+            last_exc = exc
+    raise last_exc
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
