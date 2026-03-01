@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -47,11 +48,20 @@ async def translate(req: TranslateRequest):
     )
 
     try:
+        from google.genai import types as genai_types
         response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=[prompt]
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=genai_types.GenerateContentConfig(
+                thinking_config=genai_types.ThinkingConfig(thinking_budget=0)
+            ),
         )
-        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
-        translated = json.loads(raw)
+        raw = response.text or ""
+        # Extract the JSON array robustly — strip any stray preamble
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        if not match:
+            raise ValueError(f"No JSON array found in response: {raw[:200]}")
+        translated = json.loads(match.group())
         if not isinstance(translated, list) or len(translated) != len(req.texts):
             raise ValueError(f"Expected list of {len(req.texts)} items")
         return {"translations": translated}
