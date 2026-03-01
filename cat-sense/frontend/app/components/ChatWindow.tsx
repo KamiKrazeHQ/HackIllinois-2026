@@ -184,7 +184,7 @@ export default function ChatWindow({ sessionId, onDiagnosis, onVision, onAudio, 
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [loading, sessionId, onDiagnosis])
+  }, [loading, sessionId, onDiagnosis, lang])
 
   function handleVisionResult(r: VisionResult) {
     onVision?.(r)
