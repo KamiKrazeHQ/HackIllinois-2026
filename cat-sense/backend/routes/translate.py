@@ -48,16 +48,15 @@ async def translate(req: TranslateRequest):
     )
 
     try:
-        from google.genai import types as genai_types
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[prompt],
-            config=genai_types.GenerateContentConfig(
-                thinking_config=genai_types.ThinkingConfig(thinking_budget=0)
-            ),
         )
-        raw = response.text or ""
-        # Extract the JSON array robustly — strip any stray preamble
+        # response.text may include thinking preamble — extract the JSON array robustly
+        raw = ""
+        for part in response.candidates[0].content.parts:
+            if hasattr(part, 'text') and part.text:
+                raw += part.text
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if not match:
             raise ValueError(f"No JSON array found in response: {raw[:200]}")
